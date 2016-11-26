@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.linalg import norm
 
-from settings_storage import SettingsStorage
+from settings_storage import settings
 from game_object import GameObject
 
 
@@ -18,7 +18,7 @@ class GravitySource(GameObject):
 
     def get_gravity_force(self, object):
         direction = self.position - object.position
-        distance = norm(direction)
+        distance = norm(direction) / settings.SCALE
         direction = direction / distance if norm(distance) != 0 else np.array((0., 0.))
 
         gravity_norm = self.G * (object.mass * self.mass) / distance ** 2

@@ -7,25 +7,22 @@
 'blue': (0, 0, 255),
 'yellow': (255, 255, 0),
 
-#  MATH
-'EPS': 0.001,
-
 #  GAME ENVIRONMENT SETTING
 'FPS': 60,
 'DISPLAY_RES': (800, 600),  # If FULLSCREEN OFF
-'PATH_TO_MAP': '',
-'SCALE': 100,  # SCALE: 100 == 100px per meter
+'PATH_TO_MAP': './map',
+'SCALE': 0.01,  #SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
 
 #  GAME SETTINGS
 'FULLSCREEN': True,
-'BACKGROUND': 'pic/space.jpg',
+'BACKGROUND': './pic/space.jpg',
 
 #  ASTEROIDS SETTINGS
 'ASTEROIDS_CNT': 10,
-'ASTEROID_MASS': 10 ** 4,
+'ASTEROID_MASS': 1 * 10 ** 5,
 
 #  SHIP SETTINGS
-'SHIP_MASS': 10**4,
-'DFORCE_NORM': 20000.0,  # DRAG FORCE NORM
+'SHIP_MASS': 1 * 10**5,
+'DFORCE_NORM': 500 * 10**6,  # DRAG FORCE NORM
 'da': 0.01
 }

@@ -23,7 +23,7 @@ class GameObject:
         self.total_force = np.array((0., 0.))
 
     def add_forces(self, forces):
-        self.total_force = sum(forces)
+        self.total_force += sum(forces)
 
     def update(self):
         self.direction = np.array((cos(self.angle), -sin(self.angle)))

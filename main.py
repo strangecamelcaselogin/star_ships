@@ -37,15 +37,15 @@ class Environment:
 
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
-            velocity = np.array((random(), random()))
+            velocity = np.array((random() * 1000, random() * 1000))
             self.asteroids.append(
                 Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS, (random() * WIDHT, random() * HIGH), velocity, settings.white))
 
-        G = 6.67 * 10 ** (-11)
-        inf_threshold = 10 ** 5
-        mass = 5 * 10 ** 15
-        self.gravity_source = [GravitySource(self.pygame, self.surface, 10, mass, (WIDHT / 2, HIGH / 2),
-                                             settings.yellow, G, inf_threshold)]
+        G = 6.67 * 10 ** (-11)  # Константа гравитационного взаимодействия
+        inf_threshold = 10 ** 13
+        mass = 5.97 * 10 ** 24
+        self.gravity_source = [GravitySource(self.pygame, self.surface, 25, mass, (WIDHT / 3, HIGH / 2), settings.black, G, inf_threshold),
+                               GravitySource(self.pygame, self.surface, 25, mass, (2 * WIDHT / 3, HIGH / 2), settings.black, G, inf_threshold)]
 
         background = self.pygame.image.load(settings.BACKGROUND)
         self.background = pygame.transform.scale(background, settings.DISPLAY_RES)
@@ -58,7 +58,7 @@ class Environment:
         pause_label = self.text.render(message, 1, settings.white)
         width = pause_label.get_width()
         height = pause_label.get_height()
-        self.surface.blit(pause_label, (WIDHT/2 - width/2, HIGH/2 - height/2))
+        pause_rectangle = self.surface.blit(pause_label, (WIDHT/2 - width/2, HIGH/2 - height/2))
 
         stop = False
         while not stop:
@@ -75,7 +75,7 @@ class Environment:
                     if event.key == pygame.K_p:
                         stop = True
 
-            pygame.display.update()
+            pygame.display.update(pause_rectangle)
             self.clock.tick(settings.FPS)
 
     def run(self):
@@ -89,10 +89,9 @@ class Environment:
 
             # RENDER
             self.surface.blit(self.background, (0, 0))  # self.surface.fill(settings.white)
-            self.ship.render()
             [g.render() for g in self.gravity_source]
             [a.render() for a in self.asteroids]
-
+            self.ship.render()
 
             # EVENTS AND KEYS
             for event in pygame.event.get():
@@ -127,12 +126,14 @@ class Environment:
 
 
             # DEBUG
-            label = self.text.render('Ft:{}, p:{}, v:{}, a:{}, ang:{}'
-                                     .format(np.round(norm(self.ship.total_force), decimals=1),
-                                             np.around(self.ship.position),
+            label = self.text.render('FPS:{}, Ft:{}, p:{}, v:{}, a:{}, ang:{}, dst:{}'
+                                     .format(round(self.clock.get_fps()),
+                                             np.round(norm(self.ship.total_force), decimals=1),
+                                             np.around(self.ship.position, decimals=1),
                                              np.round(norm(self.ship.velocity), decimals=1),
                                              np.round(norm(self.ship.acceleration), decimals=1),
-                                             np.round(self.ship.angle / pi, decimals=1)),
+                                             np.round(self.ship.angle / pi, decimals=1),
+                                             np.round(norm(self.gravity_source[0].position - self.ship.position) / settings.SCALE)),
                                      1, settings.white)
 
             self.surface.blit(label, (10, 10))
@@ -146,11 +147,11 @@ class Environment:
             pygame.display.update()
 
             self.clock.tick(settings.FPS)
-            pygame.display.set_caption('FPS: {}'.format(round(self.clock.get_fps())))
 
         pygame.quit()
 
 
 if __name__ == '__main__':
+    # TODO перересовывать только измененные области, а не весь кадр
     env = Environment(settings_filename='test_settings')
     env.run()

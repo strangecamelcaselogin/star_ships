@@ -4,6 +4,7 @@ class SettingsStorage(dict):
     Настройки с доступом через точку
     '''
     def __init__(self):
+        super().__init__()
         self.path = r'/'
 
     def __setattr__(self, key, value):
