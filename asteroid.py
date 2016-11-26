@@ -10,4 +10,4 @@ class Asteroid(GameObject):
 
     def render(self):
         x, y = (int(round(v)) for v in self.position)
-        pygame.draw.circle(self.surface, settings.black, (x, y), self.radius, 1)
+        self.pygame.draw.circle(self.surface, settings.black, (x, y), self.radius, 1)

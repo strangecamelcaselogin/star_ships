@@ -10,6 +10,7 @@ import pygame
 from settings_storage import settings
 from ship import Ship
 from asteroid import Asteroid
+from gravity_source import GravitySource
 
 
 class Environment:
@@ -22,16 +23,17 @@ class Environment:
         self.clock = pygame.time.Clock()
         self.text = pygame.font.SysFont("monospace", 15)
 
-        self.g_point = np.array((settings.DISPLAY_RES[0] / 2, settings.DISPLAY_RES[1] / 2))
-        self.G = 6.67 * 10 ** (-11)
-
         WIDHT, HIGH = settings.DISPLAY_RES
+
         #pygame, surface, angle, mass, position, forces
         self.ship = Ship(self.pygame, self.surface, 10, pi/2, 10000, (random() * WIDHT, random() * HIGH))
 
+        G = 6.67 * 10 ** (-11)
+        self.gravity_source = [GravitySource(self.pygame, self.surface, 10, 5 * 10 ** 14, (WIDHT / 2, HIGH / 2), settings.yellow, G, 10 ** 5)]
+
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
-            self.asteroids.append(Asteroid(self.pygame, self.surface, 10, 0, 100, (random() * WIDHT, random() * HIGH)))
+            self.asteroids.append(Asteroid(self.pygame, self.surface, 10, 0, 10**4, (random() * WIDHT, random() * HIGH)))
 
     def load_map(self):
         pass
@@ -60,6 +62,9 @@ class Environment:
 
             pygame.display.update()
             self.clock.tick(settings.FPS)
+
+    def norm(self):
+        pass
 
     def run(self):
         #engine_sound = pygame.mixer.Sound("sounds/thrust.wav")
@@ -94,27 +99,28 @@ class Environment:
 
             if keys[pygame.K_d]: self.ship.set_angle(-settings.da * pi)
 
+
             # RENDER
             self.surface.fill(settings.white)
             self.ship.render()
-            self.pygame.draw.circle(self.surface, settings.yellow, [int(p) for p in self.g_point], 10)
+
+            for g in self.gravity_source:
+                g.render()
 
             for a in self.asteroids:
                 a.render()
 
-            # ADD FORCES
-            gdir = self.g_point - self.ship.position
-            gdist = norm(gdir)
-            gdir = gdir / gdist if norm(gdist) != 0 else np.array((0., 0.))
-            gravity_norm = self.G * (self.ship.mass * 5 * 10 ** 14) / gdist ** 2  # TODO inf check
-            self.ship.add_forces((self.ship.direction * dforce_norm, gdir * gravity_norm))
 
-            for a in self.asteroids:
-                gdir = self.g_point - a.position
-                gdist = norm(gdir)
-                gdir = gdir / gdist if norm(gdist) != 0 else np.array((0., 0.))
-                gravity_norm = self.G * (a.mass * 5 * 10 ** 14) / gdist ** 2  # TODO inf check
-                a.add_forces((gdir * gravity_norm,))
+            # ADD FORCES
+            for g in self.gravity_source:
+                self.ship.add_forces((self.ship.direction * dforce_norm, g.get_gravity_force(self.ship)))
+
+                for i, a in enumerate(self.asteroids):
+                    #print(g.get_gravity_force(a))
+                    x = g.get_gravity_force(a)
+                    print(i, x)
+                    a.add_forces((x,))
+
 
             # DEBUG
             label = self.text.render('Ft:{}, p:{}, v:{}, a:{}, ang:{}'
@@ -126,6 +132,7 @@ class Environment:
                                      1, settings.black)
 
             self.surface.blit(label, (10, 10))
+
 
             # UPDATE
             self.ship.update()
