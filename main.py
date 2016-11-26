@@ -19,23 +19,31 @@ class Environment:
 
         pygame.init()
         self.pygame = pygame
-        self.surface = pygame.display.set_mode(settings.DISPLAY_RES)
+
+        # print(pygame.display.Info())
+        if settings.FULLSCREEN:
+            available_res = pygame.display.list_modes()
+            settings.DISPLAY_RES = available_res[0]
+            self.surface = pygame.display.set_mode(settings.DISPLAY_RES, pygame.FULLSCREEN)
+
+        else:
+            self.surface = pygame.display.set_mode(settings.DISPLAY_RES)
+
         self.clock = pygame.time.Clock()
         self.text = pygame.font.SysFont("monospace", 15)
 
         WIDHT, HIGH = settings.DISPLAY_RES
-
-        #pygame, surface, angle, mass, position, forces
-        self.ship = Ship(self.pygame, self.surface, 10, pi/2, 10**4, (random() * WIDHT, random() * HIGH))
+        self.ship = Ship(self.pygame, self.surface, 10, pi/2, settings.SHIP_MASS, (random() * WIDHT, random() * HIGH))
 
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
+            velocity = np.array((random(), random()))
             self.asteroids.append(
-                Asteroid(self.pygame, self.surface, 10, 10 ** 4, (random() * WIDHT, random() * HIGH), settings.white))
+                Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS, (random() * WIDHT, random() * HIGH), velocity, settings.white))
 
         G = 6.67 * 10 ** (-11)
         inf_threshold = 10 ** 5
-        mass = 5 * 10 ** 14
+        mass = 5 * 10 ** 15
         self.gravity_source = [GravitySource(self.pygame, self.surface, 10, mass, (WIDHT / 2, HIGH / 2),
                                              settings.yellow, G, inf_threshold)]
 
@@ -47,7 +55,7 @@ class Environment:
 
     def pause(self, message):
         WIDHT, HIGH = settings.DISPLAY_RES
-        pause_label = self.text.render(message, 1, settings.black)
+        pause_label = self.text.render(message, 1, settings.white)
         width = pause_label.get_width()
         height = pause_label.get_height()
         self.surface.blit(pause_label, (WIDHT/2 - width/2, HIGH/2 - height/2))
@@ -125,7 +133,7 @@ class Environment:
                                              np.round(norm(self.ship.velocity), decimals=1),
                                              np.round(norm(self.ship.acceleration), decimals=1),
                                              np.round(self.ship.angle / pi, decimals=1)),
-                                     1, settings.black)
+                                     1, settings.white)
 
             self.surface.blit(label, (10, 10))
 
@@ -144,8 +152,5 @@ class Environment:
 
 
 if __name__ == '__main__':
-    # TODO start velocity for asteroids
-    # TODO space picture
-
     env = Environment(settings_filename='test_settings')
     env.run()

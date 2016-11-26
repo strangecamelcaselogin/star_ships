@@ -10,11 +10,7 @@ class SettingsStorage(dict):
         self[key] = value
 
     def __getattr__(self, key):
-        try:
-            return self[key]
-
-        except KeyError as e:
-            print(e)
+        return self[key]
 
     def load(self, settings_path):
         self.path = settings_path
