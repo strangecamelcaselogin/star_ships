@@ -8,8 +8,8 @@ from settings_storage import settings
 
 
 class Ship(GameObject):
-    def __init__(self, pygame, surface, radius, angle, mass, position, force):
-        super().__init__(pygame, surface, radius, angle, mass, position, force)
+    def __init__(self, pygame, surface, radius, angle, mass, position):
+        super().__init__(pygame, surface, radius, angle, mass, position)
 
     def set_angle(self, delta):
         self.angle += delta

@@ -6,7 +6,7 @@ from settings_storage import settings
 
 
 class GameObject:
-    def __init__(self, pygame, surface, radius, angle, mass, position, forces):
+    def __init__(self, pygame, surface, radius, angle, mass, position):
         self.pygame = pygame
         self.surface = surface
 
@@ -20,14 +20,16 @@ class GameObject:
         self.position = np.array(position)
         self.acceleration = np.array((0., 0.))
         self.velocity = np.array((0., 0.))
+        self.total_force = np.array((0., 0.))
 
-        self.total_force = sum(np.array(force) for force in forces)
-
-    def update(self, forces):
-
-        self.direction = np.array((cos(self.angle), -sin(self.angle)))
+    def add_forces(self, forces):
         self.total_force = sum(forces)
-        self.acceleration = self.total_force / self.mass
 
+    def update(self):
+        self.direction = np.array((cos(self.angle), -sin(self.angle)))
+
+        self.acceleration = self.total_force / self.mass
         self.velocity += self.acceleration / settings.FPS
-        self.position += self.velocity / settings.FPS * settings.SCALE
+        self.position += (self.velocity * settings.SCALE ) / settings.FPS
+
+        self.total_force = np.array((0., 0.))
