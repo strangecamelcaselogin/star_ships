@@ -26,14 +26,21 @@ class Environment:
         WIDHT, HIGH = settings.DISPLAY_RES
 
         #pygame, surface, angle, mass, position, forces
-        self.ship = Ship(self.pygame, self.surface, 10, pi/2, 10000, (random() * WIDHT, random() * HIGH))
-
-        G = 6.67 * 10 ** (-11)
-        self.gravity_source = [GravitySource(self.pygame, self.surface, 10, 5 * 10 ** 14, (WIDHT / 2, HIGH / 2), settings.yellow, G, 10 ** 5)]
+        self.ship = Ship(self.pygame, self.surface, 10, pi/2, 10**4, (random() * WIDHT, random() * HIGH))
 
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
-            self.asteroids.append(Asteroid(self.pygame, self.surface, 10, 0, 10**4, (random() * WIDHT, random() * HIGH)))
+            self.asteroids.append(
+                Asteroid(self.pygame, self.surface, 10, 10 ** 4, (random() * WIDHT, random() * HIGH), settings.white))
+
+        G = 6.67 * 10 ** (-11)
+        inf_threshold = 10 ** 5
+        mass = 5 * 10 ** 14
+        self.gravity_source = [GravitySource(self.pygame, self.surface, 10, mass, (WIDHT / 2, HIGH / 2),
+                                             settings.yellow, G, inf_threshold)]
+
+        background = self.pygame.image.load(settings.BACKGROUND)
+        self.background = pygame.transform.scale(background, settings.DISPLAY_RES)
 
     def load_map(self):
         pass
@@ -63,9 +70,6 @@ class Environment:
             pygame.display.update()
             self.clock.tick(settings.FPS)
 
-    def norm(self):
-        pass
-
     def run(self):
         #engine_sound = pygame.mixer.Sound("sounds/thrust.wav")
         #engine_sound.play(loops=-1)
@@ -74,6 +78,13 @@ class Environment:
         stop = False
         while not stop:
             dforce_norm = 0
+
+            # RENDER
+            self.surface.blit(self.background, (0, 0))  # self.surface.fill(settings.white)
+            self.ship.render()
+            [g.render() for g in self.gravity_source]
+            [a.render() for a in self.asteroids]
+
 
             # EVENTS AND KEYS
             for event in pygame.event.get():
@@ -100,26 +111,11 @@ class Environment:
             if keys[pygame.K_d]: self.ship.set_angle(-settings.da * pi)
 
 
-            # RENDER
-            self.surface.fill(settings.white)
-            self.ship.render()
-
-            for g in self.gravity_source:
-                g.render()
-
-            for a in self.asteroids:
-                a.render()
-
-
             # ADD FORCES
             for g in self.gravity_source:
                 self.ship.add_forces((self.ship.direction * dforce_norm, g.get_gravity_force(self.ship)))
-
-                for i, a in enumerate(self.asteroids):
-                    #print(g.get_gravity_force(a))
-                    x = g.get_gravity_force(a)
-                    print(i, x)
-                    a.add_forces((x,))
+                for a in self.asteroids:
+                    a.add_forces((g.get_gravity_force(a),))
 
 
             # DEBUG
@@ -148,5 +144,8 @@ class Environment:
 
 
 if __name__ == '__main__':
+    # TODO start velocity for asteroids
+    # TODO space picture
+
     env = Environment(settings_filename='test_settings')
     env.run()
