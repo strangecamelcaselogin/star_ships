@@ -17,10 +17,12 @@ class Environment:
     def __init__(self, settings_filename):
         settings.load(settings_filename)
 
-        pygame.init()
         self.pygame = pygame
+        self.pygame.init()
+        self.clock = pygame.time.Clock()
+        self.text = pygame.font.SysFont("monospace", 15)
 
-        # print(pygame.display.Info())
+        print(pygame.display.Info())
         if settings.FULLSCREEN:
             available_res = pygame.display.list_modes()
             settings.DISPLAY_RES = available_res[0]
@@ -29,15 +31,12 @@ class Environment:
         else:
             self.surface = pygame.display.set_mode(settings.DISPLAY_RES)
 
-        self.clock = pygame.time.Clock()
-        self.text = pygame.font.SysFont("monospace", 15)
-
         WIDHT, HIGH = settings.DISPLAY_RES
-        self.ship = Ship(self.pygame, self.surface, 10, pi/2, settings.SHIP_MASS, (random() * WIDHT, random() * HIGH))
+        self.ship = Ship(self.pygame, self.surface, 10, pi/2, settings.SHIP_MASS, (random() * WIDHT, random() * HIGH), settings.blue)
 
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
-            velocity = np.array((random() * 1000, random() * 1000))
+            velocity = np.array((1000 + random() * 1000, 1000 + random() * 1000))
             self.asteroids.append(
                 Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS, (random() * WIDHT, random() * HIGH), velocity, settings.white))
 
@@ -47,7 +46,8 @@ class Environment:
         self.gravity_source = [GravitySource(self.pygame, self.surface, 25, mass, (WIDHT / 3, HIGH / 2), settings.black, G, inf_threshold),
                                GravitySource(self.pygame, self.surface, 25, mass, (2 * WIDHT / 3, HIGH / 2), settings.black, G, inf_threshold)]
 
-        background = self.pygame.image.load(settings.BACKGROUND)
+        #.convert() позволило увеличить fps с 50 до 270
+        background = self.pygame.image.load(settings.BACKGROUND).convert()
         self.background = pygame.transform.scale(background, settings.DISPLAY_RES)
 
     def load_map(self):
@@ -75,23 +75,35 @@ class Environment:
                     if event.key == pygame.K_p:
                         stop = True
 
-            pygame.display.update(pause_rectangle)
+            self.pygame.display.update(pause_rectangle)
             self.clock.tick(settings.FPS)
 
-    def run(self):
-        #engine_sound = pygame.mixer.Sound("sounds/thrust.wav")
-        #engine_sound.play(loops=-1)
+    def play_sound(self, filename):
+        sound = pygame.mixer.Sound(filename)
+        sound.play(loops=-1)
         #engine_sound.set_volume(0)
 
+    def run(self):
         stop = False
+        debug = False
         while not stop:
             dforce_norm = 0
+            c_fps = self.clock.get_fps()
 
             # RENDER
             self.surface.blit(self.background, (0, 0))  # self.surface.fill(settings.white)
-            [g.render() for g in self.gravity_source]
-            [a.render() for a in self.asteroids]
-            self.ship.render()
+            for g in self.gravity_source:
+                g.render(width=0)
+
+            for a in self.asteroids:
+                a.render()
+                if debug:
+                    a.render_debug()
+
+            self.ship.render(width=0)
+            if debug:
+                self.ship.render_debug()
+
 
             # EVENTS AND KEYS
             for event in pygame.event.get():
@@ -99,11 +111,14 @@ class Environment:
                     stop = True
 
                 if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        stop = True
+
                     if event.key == pygame.K_p:
                         self.pause("PAUSED")
 
-                    if event.key == pygame.K_ESCAPE:
-                        stop = True
+                    if event.key == pygame.K_b:
+                        debug = not debug
 
             keys = pygame.key.get_pressed()
 
@@ -113,9 +128,11 @@ class Environment:
             if keys[pygame.K_s]:
                 dforce_norm += -1 * settings.DFORCE_NORM
 
-            if keys[pygame.K_a]: self.ship.set_angle(settings.da * pi)
+            if keys[pygame.K_a]:
+                self.ship.set_angle(settings.da * pi)
 
-            if keys[pygame.K_d]: self.ship.set_angle(-settings.da * pi)
+            if keys[pygame.K_d]:
+                self.ship.set_angle(-settings.da * pi)
 
 
             # ADD FORCES
@@ -125,9 +142,9 @@ class Environment:
                     a.add_forces((g.get_gravity_force(a),))
 
 
-            # DEBUG
-            label = self.text.render('FPS:{}, Ft:{}, p:{}, v:{}, a:{}, ang:{}, dst:{}'
-                                     .format(round(self.clock.get_fps()),
+            # DEBUG DATA
+            data = self.text.render('FPS:{}, Ft:{}, p:{}, v:{}, a:{}, ang:{}, dst:{}'
+                                     .format(round(c_fps),
                                              np.round(norm(self.ship.total_force), decimals=1),
                                              np.around(self.ship.position, decimals=1),
                                              np.round(norm(self.ship.velocity), decimals=1),
@@ -136,22 +153,20 @@ class Environment:
                                              np.round(norm(self.gravity_source[0].position - self.ship.position) / settings.SCALE)),
                                      1, settings.white)
 
-            self.surface.blit(label, (10, 10))
-
+            self.surface.blit(data, (10, 10))
 
             # UPDATE
             self.ship.update()
             for a in self.asteroids:
                 a.update()
 
-            pygame.display.update()
-
+            self.pygame.display.update()
             self.clock.tick(settings.FPS)
 
         pygame.quit()
 
 
 if __name__ == '__main__':
-    # TODO перересовывать только измененные области, а не весь кадр
+    # TODO слежение корабля за курсором мыши
     env = Environment(settings_filename='test_settings')
     env.run()

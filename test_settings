@@ -9,9 +9,9 @@
 
 #  GAME ENVIRONMENT SETTING
 'FPS': 60,
-'DISPLAY_RES': (800, 600),  # If FULLSCREEN OFF
+'DISPLAY_RES': (800, 600),  # If FULLSCREEN off
 'PATH_TO_MAP': './map',
-'SCALE': 0.01,  #SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
+'SCALE': 0.01,  # SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
 
 #  GAME SETTINGS
 'FULLSCREEN': True,
@@ -19,7 +19,7 @@
 
 #  ASTEROIDS SETTINGS
 'ASTEROIDS_CNT': 10,
-'ASTEROID_MASS': 1 * 10 ** 5,
+'ASTEROID_MASS': 1 * 10 ** 6,
 
 #  SHIP SETTINGS
 'SHIP_MASS': 1 * 10**5,
