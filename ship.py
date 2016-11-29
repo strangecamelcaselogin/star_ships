@@ -3,8 +3,8 @@ from math import pi
 
 import numpy as np
 
-from game_object import GameObject
 from settings_storage import settings
+from game_object import GameObject
 
 
 class Ship(GameObject):
@@ -14,4 +14,3 @@ class Ship(GameObject):
     def set_angle(self, delta):
         self.angle += delta
         self.angle %= 2 * pi
-

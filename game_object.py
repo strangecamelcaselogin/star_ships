@@ -32,7 +32,7 @@ class GameObject:
 
         self.acceleration = self.total_force / self.mass
         self.velocity += self.acceleration / settings.FPS
-        self.position += (self.velocity * settings.SCALE ) / settings.FPS
+        self.position += (self.velocity * settings.SCALE) / settings.FPS
 
         self.total_force = np.array((0., 0.))  # Очень важно обнулить аккумулятор сил.
 
