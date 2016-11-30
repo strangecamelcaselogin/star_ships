@@ -9,20 +9,20 @@
 
 #  GAME ENVIRONMENT SETTING
 'FPS': 60,
-'DISPLAY_RES': (800, 600),  # If FULLSCREEN off
+'DISPLAY_RES': (800, 600),  # If not FULLSCREEN
 'PATH_TO_MAP': './map',
-'SCALE': 0.01,  # SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
+'SCALE': 1,  # SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
 
 #  GAME SETTINGS
 'FULLSCREEN': True,
 'BACKGROUND': './pic/space.jpg',
 
 #  ASTEROIDS SETTINGS
-'ASTEROIDS_CNT': 10,
-'ASTEROID_MASS': 1 * 10 ** 6,
+'ASTEROIDS_CNT': 15,
+'ASTEROID_MASS': 10 * 10 ** 3,
 
 #  SHIP SETTINGS
-'SHIP_MASS': 1 * 10**5,
-'DFORCE_NORM': 500 * 10**6,  # DRAG FORCE NORM
+'SHIP_MASS': 5 * 10**3,
+'DFORCE_NORM': 50 * 10**3,  # DRAG FORCE NORM
 'da': 0.01
 }

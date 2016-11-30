@@ -32,17 +32,17 @@ class GameObject:
 
         self.acceleration = self.total_force / self.mass
         self.velocity += self.acceleration / settings.FPS
-        self.position += (self.velocity * settings.SCALE) / settings.FPS
+        self.position += self.velocity / settings.FPS
 
         self.total_force = np.array((0., 0.))  # Очень важно обнулить аккумулятор сил.
 
     def render(self, width=1):
-        x, y = (int(round(v)) for v in self.position)
+        x, y = (int(round(v * settings.SCALE)) for v in self.position)
         self.pygame.draw.circle(self.surface, self.color, (x, y), self.radius, width)
 
     def render_debug(self):
         # angle direction
-        x, y = (int(round(v)) for v in self.position)
+        x, y = (int(round(v * settings.SCALE)) for v in self.position)
         dirx, diry = (int(v * self.radius) for v in self.direction)
         self.pygame.draw.line(self.surface, settings.red, (x, y), (x + dirx, y + diry))
 
