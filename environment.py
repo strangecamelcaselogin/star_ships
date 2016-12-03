@@ -3,7 +3,7 @@ from time import time
 from math import pi
 
 import numpy as np
-from vec2math import is_same, vec2_norm, vec2_normal, vec2_reflect
+from vec2math import is_same, vec2_norm, vec2_normal, vec2_reflect, vec2_unit
 
 from settings_storage import settings
 from ship import Ship
@@ -97,6 +97,9 @@ class Environment:
         direction, distance, radius_sum = contact
         deep = radius_sum - distance
         proportion = a.mass / b.mass
+        n = vec2_unit(vec2_normal(direction))
+        a.velocity = vec2_reflect(a.velocity, n)
+        b.velocity = vec2_reflect(b.velocity, n)
 
     def run(self):
         stop = False
@@ -105,6 +108,7 @@ class Environment:
         while not stop:
             dforce_norm = 0
             c_fps = self.clock.get_fps()
+            dt = 1 / c_fps if c_fps != 0 else 1/settings.FPS
 
             # RENDER
             self.surface.blit(self.background, (0, 0))  # self.surface.fill(settings.white)
@@ -165,7 +169,8 @@ class Environment:
                     if not is_same(a.position, b.position):
                         contact = self.collision_detect(a, b)
                         if contact:
-                            self.collision_resolve(a, b, contact)
+                            print('hey', contact)
+                            self.collision_resolve(b, a, contact)
 
 
             # DEBUG DATA
@@ -184,9 +189,9 @@ class Environment:
 
 
             # UPDATE
-            self.ship.update()
+            self.ship.update(dt)
             for a in self.asteroids:
-                a.update()
+                a.update(dt)
 
             self.pygame.display.update()
             self.clock.tick(settings.FPS)

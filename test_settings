@@ -14,11 +14,11 @@
 'SCALE': 1,  # SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
 
 #  GAME SETTINGS
-'FULLSCREEN': True,
+'FULLSCREEN': False,
 'BACKGROUND': './pic/space.jpg',
 
 #  ASTEROIDS SETTINGS
-'ASTEROIDS_CNT': 15,
+'ASTEROIDS_CNT': 2,
 'ASTEROID_MASS': 10 * 10 ** 3,
 
 #  SHIP SETTINGS
