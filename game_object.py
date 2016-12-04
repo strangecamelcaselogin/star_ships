@@ -44,10 +44,7 @@ class GameObject:
         self.pygame.draw.circle(self.surface, self.color, (x, y), self.radius, width)
 
     def render_debug(self):
-        # angle direction
         x, y = (int(round(p * settings.SCALE)) for p in self.position)
-        dirx, diry = (int(d * self.radius) for d in self.direction)
-        self.pygame.draw.line(self.surface, settings.red, (x, y), (x + dirx, y + diry))
 
         # velocity vector
         vx, vy = (int(v * settings.SCALE) for v in self.velocity)

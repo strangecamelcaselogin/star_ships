@@ -3,7 +3,7 @@ from time import time
 from math import pi
 
 import numpy as np
-from vec2math import is_same, vec2_norm, vec2_normal, vec2_reflect, vec2_unit
+from v2math import v2is_same, v2norm, v2normal, v2reflect, v2unit
 
 from settings_storage import settings
 from ship import Ship
@@ -52,6 +52,21 @@ class Environment:
     def load_map(self):
         pass
 
+    def render_hud(self):
+        fps_label = self.text.render('FPS:{}'.format(round(self.clock.get_fps())), 1, settings.white)
+        self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
+
+        data = self.text.render('|F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}'
+                                .format(np.round(v2norm(self.ship.total_force), decimals=1),
+                                        self.ship.eng_force_norm,
+                                        np.around(self.ship.position, decimals=1),
+                                        np.round(v2norm(self.ship.velocity), decimals=1),
+                                        np.round(v2norm(self.ship.acceleration), decimals=1),
+                                        np.round(self.ship.angle / pi, decimals=1)),
+                                1, settings.white)
+
+        self.surface.blit(data, (10, 10))
+
     def pause(self, message):
         WIDHT, HIGH = settings.DISPLAY_RES
         pause_label = self.text.render(message, 1, settings.white)
@@ -83,7 +98,7 @@ class Environment:
 
     def collision_detect(self, a, b):
         direction = a.position - b.position
-        distance = vec2_norm(direction)
+        distance = v2norm(direction)
         radius_sum = a.radius + b.radius
         if distance <= radius_sum:
             return direction, distance, radius_sum
@@ -93,8 +108,8 @@ class Environment:
     def collision_resolve(self, a, b, contact):
         direction, distance, radius_sum = contact
         deep = radius_sum - distance
-        proportion = a.mass / b.mass
-        n = vec2_unit(vec2_normal(direction))
+        k = a.mass / b.mass
+        n = v2normal(direction)
         # Растолкнуть на deep в соотношении proportion
 
     def run(self):
@@ -104,21 +119,7 @@ class Environment:
         dt = 1 / settings.FPS
 
         while not stop:
-            eng_force_norm = 0
-            c_fps = self.clock.get_fps()
-
-            # RENDER
-            # self.surface.fill(settings.white)
-            self.surface.blit(self.background, (0, 0))
-
-            [g.render(width=0) for g in self.gravity_source]
-            [a.render() for a in self.asteroids]
-            self.ship.render(width=0)
-
-            if debug:
-                [a.render_debug() for a in self.asteroids]
-                self.ship.render_debug()
-
+            self.ship.eng_force_norm = 0
 
             # EVENTS AND KEYS
             for event in self.pygame.event.get():
@@ -138,10 +139,10 @@ class Environment:
             keys = self.pygame.key.get_pressed()
 
             if keys[self.pygame.K_w]:
-                eng_force_norm = 1 * settings.ENG_FORCE
+                self.ship.eng_force_norm = settings.ENG_FORCE
 
             if keys[self.pygame.K_s]:
-                eng_force_norm = -1 * settings.ENG_FORCE
+                self.ship.eng_force_norm = -settings.ENG_FORCE
 
             if keys[self.pygame.K_a]:
                 self.ship.turn(settings.da * pi, dt)
@@ -151,7 +152,7 @@ class Environment:
 
 
             # ADD FORCES
-            self.ship.add_forces(self.ship.direction * eng_force_norm)
+            self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
 
             for g in self.gravity_source:
                 self.ship.add_forces(g.get_gravity_force(self.ship))
@@ -162,24 +163,24 @@ class Environment:
             # COLLISIONS
             # ...
 
-            # DEBUG DATA
-            data = self.text.render('FPS:{}, |F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}'
-                                     .format(round(c_fps),
-                                             np.round(vec2_norm(self.ship.total_force), decimals=1),
-                                             eng_force_norm,
-                                             np.around(self.ship.position, decimals=1),
-                                             np.round(vec2_norm(self.ship.velocity), decimals=1),
-                                             np.round(vec2_norm(self.ship.acceleration), decimals=1),
-                                             np.round(self.ship.angle / pi, decimals=1)),
-                                     1, settings.white)
-
-            self.surface.blit(data, (10, 10))
-
-
             # UPDATE
             self.ship.update(dt)
             for a in self.asteroids:
                 a.update(dt)
+
+            # RENDER
+            # self.surface.fill(settings.white)
+            self.surface.blit(self.background, (0, 0))
+
+            self.render_hud()
+
+            [g.render(width=0) for g in self.gravity_source]
+            [a.render() for a in self.asteroids]
+            self.ship.render(width=0)
+
+            if debug:
+                [a.render_debug() for a in self.asteroids]
+                self.ship.render_debug()
 
             self.pygame.display.update()
             self.clock.tick(settings.FPS)
