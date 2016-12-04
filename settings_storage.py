@@ -16,19 +16,7 @@ class SettingsStorage(dict):
     def load(self, settings_path):
         self.path = settings_path
 
-        try:
-            f = open(self.path, 'r')
+        with open(self.path, 'r') as f:
             self.update(eval(f.read()))
-
-        except Exception as e:
-            print(e)
-
-        finally:
-            f.close()
-
-    def save(self):
-        f = open(self.path, 'w')
-        f.write(repr(self.__dict__))
-        f.close()
 
 settings = SettingsStorage()

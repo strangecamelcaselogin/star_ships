@@ -15,8 +15,7 @@ class GameObject:
         self.mass = mass
 
         self.direction = np.array((cos(self.angle), -sin(self.angle)))
-        self.inertia_norm = (self.mass * self.radius ** 2) / 4
-
+        self.previous_position = np.array(position)
         self.position = np.array(position)
         self.acceleration = np.array((0., 0.))
         self.velocity = np.array((0., 0.))
@@ -24,17 +23,21 @@ class GameObject:
 
         self.color = color
 
-    def add_forces(self, forces):
+    def add_forces(self, *forces):
         self.total_force += sum(forces)
 
     def update(self, dt):
         self.direction = np.array((cos(self.angle), -sin(self.angle)))
 
         self.acceleration = self.total_force / self.mass
-        self.velocity += self.acceleration * dt
-        self.position += self.velocity * dt
 
-        self.total_force = np.array((0., 0.))  # Очень важно обнулить аккумулятор сил.
+        self.velocity = (self.position - self.previous_position) / dt  # не нужно
+        t = self.position
+        self.position = 2 * self.position - self.previous_position + self.acceleration * dt ** 2
+        self.previous_position = t
+
+        # Важно обнулить аккумулятор сил, чтобы силы не накапливались.
+        self.total_force = np.array((0., 0.))
 
     def render(self, width=1):
         x, y = (int(round(p * settings.SCALE)) for p in self.position)
