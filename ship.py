@@ -1,10 +1,8 @@
-from random import randint
 from math import pi
-
-import numpy as np
 
 from settings_storage import settings
 from game_object import GameObject
+from bullet import Bullet
 
 
 class Ship(GameObject):
@@ -18,8 +16,13 @@ class Ship(GameObject):
 
     def render(self, width=1):
         super().render(width)
-        x, y = (int(round(p * settings.SCALE)) for p in self.position)
 
-        # angle direction
+        # Направление взгляда
         dirx, diry = (int(d * self.radius) for d in self.direction)
-        self.pygame.draw.line(self.surface, settings.red, (x, y), (x + dirx, y + diry))
+        self.pygame.draw.line(self.surface, settings.red, (self.x, self.y), (self.x + dirx, self.y + diry))
+
+    def shot(self):
+        # TODO cool down
+        inst_velocity = self.direction * settings.BULLET_VELOCITY / settings.FPS
+
+        return Bullet(self.pygame, self.surface, 5, 100, self.position, inst_velocity, settings.yellow)

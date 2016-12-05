@@ -2,13 +2,6 @@ from math import sqrt
 import numpy as np
 
 
-def v2is_same(vector1, vector2):
-    if vector1[0] == vector2[0] and vector1[1] == vector2[1]:
-        return True
-
-    return False
-
-
 def v2norm(vector):
     return sqrt(vector[0] * vector[0] + vector[1] * vector[1])
 
@@ -25,5 +18,3 @@ def v2normal(vector):
 
 def v2reflect(vector, normal):
     return -vector + 2 * np.dot(vector, normal) * normal
-
-

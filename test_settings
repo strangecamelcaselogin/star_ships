@@ -8,22 +8,24 @@
 'yellow': (255, 255, 0),
 
 #  GAME SETTINGS
-'FPS': 60,
-'FULLSCREEN': True,
-'DISPLAY_RES': (800, 600),  # If not FULLSCREEN
+'FULLSCREEN': False,
+'FPS': 60,                          # Target FPS
+'DISPLAY_RES': (800, 600),          # If not FULLSCREEN
 'PATH_TO_MAP': './map',
 'BACKGROUND': './pic/space.jpg',
 
 #  ENVIRONMENT SETTINGS
-'SCALE': 1,  # SCALE: 1 == 1px per meter, 0.001 == 1px per 1000 meter
-'G': 6.67 * 10 ** (-11),
+'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
+'G': 6.67 * 10 ** (-11),            # CONST
 
 #  ASTEROIDS SETTINGS
-'ASTEROIDS_CNT': 2,
+'ASTEROIDS_CNT': 15,
 'ASTEROID_MASS': 10 * 10 ** 3,
 
 #  SHIP SETTINGS
 'SHIP_MASS': 5 * 10**3,
-'ENG_FORCE': 5 * 10**5,  # DRAG FORCE NORM
-'da': 1.8
+'ENG_FORCE': 5 * 10**5,             # Norm of engine force
+'da': 1.8,                          # Angle (da * pi) to turn ship
+'COOLDOWN': 1,                      # Cool down in seconds
+'BULLET_VELOCITY': 800              # m/s
 }
