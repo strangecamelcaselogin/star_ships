@@ -3,6 +3,7 @@ class SettingsStorage(dict):
     Store your settings with access through the point
     Настройки с доступом через точку
     '''
+
     def __init__(self):
         super().__init__()
         self.path = r'/'
@@ -18,5 +19,6 @@ class SettingsStorage(dict):
 
         with open(self.path, 'r') as f:
             self.update(eval(f.read()))
+
 
 settings = SettingsStorage()

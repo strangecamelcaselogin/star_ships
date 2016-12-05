@@ -15,11 +15,15 @@ class Environment:
     def __init__(self, pygame, settings_filename):
         settings.load(settings_filename)
 
+        self.debug = False
+        self.stop = False
+        self.dt = 1 / settings.FPS
+
         self.pygame = pygame
         self.pygame.init()
 
         self.clock = self.pygame.time.Clock()
-        self.text = self.pygame.font.SysFont("monospace", 15)
+        self.text = self.pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE)
 
         if settings.FULLSCREEN:
             settings.DISPLAY_RES = self.pygame.display.list_modes()[0]  # Выбираем наибольшее доступное разрешение
@@ -38,7 +42,7 @@ class Environment:
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * WIDHT, random() * HIGH)
-            initial_velocity = np.array((random() * 1, random() * 1))  # momentum speed
+            initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))  # inst speed
             self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
@@ -48,7 +52,9 @@ class Environment:
         self.gravity_sources = [
             GravitySource(self.pygame, self.surface, 25, mass, (WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE),
                           settings.black, settings.G, inf_threshold),
-            ]  # GravitySource(self.pygame, self.surface, 25, mass, (2 * WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE), settings.black, settings.G, inf_threshold)]
+            GravitySource(self.pygame, self.surface, 25, mass,
+                          (2 * WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE), settings.black, settings.G,
+                          inf_threshold)]
 
         self.bullets = []
 
@@ -61,6 +67,7 @@ class Environment:
         width = pause_label.get_width()
         height = pause_label.get_height()
         pause_rectangle = self.surface.blit(pause_label, (WIDHT / 2 - width / 2, HIGH / 2 - height / 2))
+        self.pygame.display.update(pause_rectangle)
 
         stop = False
         while not stop:
@@ -77,12 +84,94 @@ class Environment:
                     if event.key == self.pygame.K_p:
                         stop = True
 
-            self.pygame.display.update(pause_rectangle)
             self.clock.tick(settings.FPS)
 
     def play_sound(self, filename):
         sound = self.pygame.mixer.Sound(filename)
         sound.play(loops=-1)
+
+    def events(self):
+        for event in self.pygame.event.get():
+            if event.type == self.pygame.QUIT:
+                self.stop = True
+
+            if event.type == self.pygame.KEYDOWN:
+                if event.key == self.pygame.K_ESCAPE:
+                    self.stop = True
+
+                if event.key == self.pygame.K_p:
+                    self.pause("PAUSED")
+
+                if event.key == self.pygame.K_b:
+                    self.debug = not self.debug
+
+        keys = self.pygame.key.get_pressed()
+
+        if keys[self.pygame.K_w]:
+            self.ship.eng_force_norm = settings.ENG_FORCE
+
+        if keys[self.pygame.K_s]:
+            self.ship.eng_force_norm = -settings.ENG_FORCE
+
+        if keys[self.pygame.K_a]:
+            self.ship.turn(settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_d]:
+            self.ship.turn(-settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_SPACE]:
+            bullet = self.ship.shot()
+            if bullet is not None:
+                self.bullets.append(bullet)
+
+    def update(self):
+        self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
+
+        for g in self.gravity_sources:
+            self.ship.add_forces(g.get_gravity_force(self.ship))
+            for a in self.asteroids:
+                a.add_forces(g.get_gravity_force(a))
+
+            for b in self.bullets:
+                b.add_forces(g.get_gravity_force(b))
+
+        # UPDATE
+        self.ship.update(self.dt)
+        for a in self.asteroids:
+            a.update(self.dt)
+
+        for g in self.gravity_sources:
+            g.update(self.dt)
+
+        for b in self.bullets:
+            b.update(self.dt)
+
+        # COLLISIONS
+        for a in self.asteroids:
+            ship_contact = self.collision_detect(self.ship, a)
+            if ship_contact:
+                self.collision_resolve(self.ship, a, ship_contact)
+
+            for b in self.asteroids:
+                if a is not b:
+                    contact = self.collision_detect(a, b)
+                    if contact:
+                        self.collision_resolve(a, b, contact)
+
+    def render(self):
+        # self.surface.fill(settings.white)
+        self.surface.blit(self.background_image, (0, 0))
+
+        self.render_hud()
+
+        [g.render(width=0) for g in self.gravity_sources]
+        [a.render() for a in self.asteroids]
+        [b.render() for b in self.bullets]
+        self.ship.render(width=0)
+
+        if self.debug:
+            [a.render_debug() for a in self.asteroids]
+            self.ship.render_debug()
 
     def render_hud(self):
         fps_label = self.text.render('FPS:{}'.format(round(self.clock.get_fps())), 1, settings.white)
@@ -92,7 +181,7 @@ class Environment:
                                 .format(np.round(v2norm(self.ship.total_force), decimals=1),
                                         self.ship.eng_force_norm,
                                         np.around(self.ship.position, decimals=1),
-                                        np.round(v2norm(self.ship.inst_velocity * settings.FPS), decimals=1),
+                                        np.round(v2norm(self.ship.inst_velocity / self.dt), decimals=1),
                                         np.round(v2norm(self.ship.acceleration), decimals=1),
                                         np.round(self.ship.angle / pi, decimals=1),
                                         len(self.bullets)),
@@ -106,41 +195,37 @@ class Environment:
         distance = v2norm(direction)
         radius_sum = a.radius + b.radius
         if distance <= radius_sum:
-            return direction, distance, radius_sum
+            factor = (distance - radius_sum) / distance
+            return direction, factor
 
         return None
 
     @staticmethod
     def collision_resolve(a, b, contact):
-        direction, distance, radius_sum = contact
-        deep = radius_sum - distance
-        k = a.mass / b.mass
-        n = v2normal(direction)
-        a.position = a.previous_position
-        b.position = b.previous_position
-        # Растолкнуть на deep в соотношении proportion
+        # Растолкнуть на deep в соотношении k
+
+        direction, factor = contact
+        k = a.mass / b.mass  # TODO include k in calculations
+        a.position -= 0.5 * factor * direction
+        b.position += 0.5 * factor * direction
 
     @staticmethod
-    def check_kill(chek_list):
+    def check_kill(check_list):
         i = 0
-        l = len(chek_list)
+        l = len(check_list)
         while l > 0 and i < l:  # !!!
-            x, y = chek_list[i].position
+            x, y = check_list[i].position
             if x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]:
-                chek_list.pop(i)
+                check_list.pop(i)
 
             else:
                 i += 1
 
-            l = len(chek_list)
+            l = len(check_list)
 
     def run(self):
-        stop = False
-        debug = False
 
-        dt = 1 / settings.FPS
-
-        while not stop:
+        while not self.stop:
             self.ship.eng_force_norm = 0
             self.ship.reset_forces()
             for a in self.asteroids:
@@ -150,84 +235,13 @@ class Environment:
             self.check_kill(self.bullets)
 
             # EVENTS AND KEYS
-            for event in self.pygame.event.get():
-                if event.type == self.pygame.QUIT:
-                    stop = True
+            self.events()
 
-                if event.type == self.pygame.KEYDOWN:
-                    if event.key == self.pygame.K_ESCAPE:
-                        stop = True
-
-                    if event.key == self.pygame.K_p:
-                        self.pause("PAUSED")
-
-                    if event.key == self.pygame.K_b:
-                        debug = not debug
-
-            keys = self.pygame.key.get_pressed()
-
-            if keys[self.pygame.K_w]:
-                self.ship.eng_force_norm = settings.ENG_FORCE
-
-            if keys[self.pygame.K_s]:
-                self.ship.eng_force_norm = -settings.ENG_FORCE
-
-            if keys[self.pygame.K_a]:
-                self.ship.turn(settings.da * pi, dt)
-
-            if keys[self.pygame.K_d]:
-                self.ship.turn(-settings.da * pi, dt)
-
-            if keys[self.pygame.K_SPACE]:
-                bullet = self.ship.shot()
-                if bullet is not None:
-                    self.bullets.append(bullet)
-
-            # ADD FORCES
-            self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
-
-            for g in self.gravity_sources:
-                self.ship.add_forces(g.get_gravity_force(self.ship))
-                for a in self.asteroids:
-                    a.add_forces(g.get_gravity_force(a))
-
-                for b in self.bullets:
-                    b.add_forces(g.get_gravity_force(b))
-
-            # UPDATE
-            self.ship.update(dt)
-            for a in self.asteroids:
-                a.update(dt)
-
-            for g in self.gravity_sources:
-                g.update(dt)
-
-            for b in self.bullets:
-                b.update(dt)
-
-            # COLLISIONS
-            for a in self.asteroids:
-                for b in self.asteroids:
-                    if a is not b:
-                        contact = self.collision_detect(a, b)
-                        if contact:
-                            print('contact')
-                            self.collision_resolve(a, b, contact)
+            # ADD FORCES, UPDATE, COLLISIONS
+            self.update()
 
             # RENDER
-            # self.surface.fill(settings.white)
-            self.surface.blit(self.background_image, (0, 0))
-
-            self.render_hud()
-
-            [g.render(width=0) for g in self.gravity_sources]
-            [a.render() for a in self.asteroids]
-            [b.render() for b in self.bullets]
-            self.ship.render(width=0)
-
-            if debug:
-                [a.render_debug() for a in self.asteroids]
-                self.ship.render_debug()
+            self.render()
 
             # UPDATE FRAME
             self.pygame.display.update()
