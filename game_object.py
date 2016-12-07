@@ -3,6 +3,7 @@ from math import sin, cos, pi
 import numpy as np
 
 from settings_storage import settings
+from v2math import v2unit
 
 
 class GameObject:
@@ -57,6 +58,5 @@ class GameObject:
         self.pygame.draw.line(self.surface, settings.green, (self.x, self.y), (self.x + vx, self.y + vy))
 
         # Total Force vector
-        #max_force = 10**4
-        #fx, fy = (int(f * settings.SCALE / max_force) for f in self.total_force)
-        #self.pygame.draw.line(self.surface, settings.yellow, (self.x, self.y), (self.x + fx, self.y + fy))
+        fx, fy = (int(f * self.radius) for f in v2unit(self.total_force))
+        self.pygame.draw.line(self.surface, settings.yellow, (self.x, self.y), (self.x + fx, self.y + fy))

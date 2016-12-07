@@ -19,7 +19,7 @@ class Ship(GameObject):
     def render(self, width=1):
         super().render(width)
 
-        # Направление взгляда
+        # Добавим направление взгляда
         dirx, diry = (int(d * self.radius) for d in self.direction)
         self.pygame.draw.line(self.surface, settings.red, (self.x, self.y), (self.x + dirx, self.y + diry))
 
@@ -28,6 +28,7 @@ class Ship(GameObject):
         if t - self.time_last_shot > settings.COOLDOWN:
             self.time_last_shot = t
             inst_velocity = self.direction * settings.BULLET_VELOCITY / settings.FPS
-            return Bullet(self.pygame, self.surface, 5, settings.BULLET_MASS, self.position, inst_velocity, settings.yellow)
+            return Bullet(self.pygame, self.surface, settings.BULLET_RADIUS, settings.BULLET_MASS, self.position,
+                          inst_velocity, settings.yellow)
 
         return None

@@ -1,9 +1,9 @@
-from time import time
+# from time import time
 from random import random
 from math import pi
 
 import numpy as np
-from v2math import v2norm, v2normal, v2reflect, v2unit
+from v2math import v2norm  # , v2normal, v2reflect, v2unit
 
 from settings_storage import settings
 from ship import Ship
@@ -37,12 +37,15 @@ class Environment:
         self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
 
         ship_position = (random() * WIDHT, random() * HIGH)
-        self.ship = Ship(self.pygame, self.surface, 10, pi / 2, settings.SHIP_MASS, ship_position, settings.blue)
+        self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
+                         settings.blue)
+
+        self.bullets = []
 
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * WIDHT, random() * HIGH)
-            initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))  # inst speed
+            initial_velocity = np.array((random() * 3, random() * 3))  # inst speed #np.array((0., 0.))
             self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
@@ -55,8 +58,6 @@ class Environment:
             GravitySource(self.pygame, self.surface, 25, mass,
                           (2 * WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE), settings.black, settings.G,
                           inf_threshold)]
-
-        self.bullets = []
 
     def load_map(self):
         pass
@@ -91,6 +92,7 @@ class Environment:
         sound.play(loops=-1)
 
     def events(self):
+        # Check pygame events and raw keys values
         for event in self.pygame.event.get():
             if event.type == self.pygame.QUIT:
                 self.stop = True
@@ -125,8 +127,8 @@ class Environment:
                 self.bullets.append(bullet)
 
     def update(self):
+        # Add gravity and offer forces
         self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
-
         for g in self.gravity_sources:
             self.ship.add_forces(g.get_gravity_force(self.ship))
             for a in self.asteroids:
@@ -135,7 +137,7 @@ class Environment:
             for b in self.bullets:
                 b.add_forces(g.get_gravity_force(b))
 
-        # UPDATE
+        # Update positions
         self.ship.update(self.dt)
         for a in self.asteroids:
             a.update(self.dt)
@@ -146,7 +148,7 @@ class Environment:
         for b in self.bullets:
             b.update(self.dt)
 
-        # COLLISIONS
+        # Detect and resolve collisions
         for a in self.asteroids:
             ship_contact = self.collision_detect(self.ship, a)
             if ship_contact:
@@ -172,6 +174,9 @@ class Environment:
         if self.debug:
             [a.render_debug() for a in self.asteroids]
             self.ship.render_debug()
+
+        # Update frame
+        self.pygame.display.update()
 
     def render_hud(self):
         fps_label = self.text.render('FPS:{}'.format(round(self.clock.get_fps())), 1, settings.white)
@@ -224,27 +229,27 @@ class Environment:
             l = len(check_list)
 
     def run(self):
-
         while not self.stop:
             self.ship.eng_force_norm = 0
             self.ship.reset_forces()
             for a in self.asteroids:
                 a.reset_forces()
 
-            # kill all bullets outside screen
+            for b in self.bullets:
+                b.reset_forces()
+
+            # Kill all bullets outside screen
             self.check_kill(self.bullets)
 
-            # EVENTS AND KEYS
+            # Events and keys
             self.events()
 
-            # ADD FORCES, UPDATE, COLLISIONS
+            # Add Forces, Update all objects, check collisions
             self.update()
 
-            # RENDER
+            # Render all objects
             self.render()
 
-            # UPDATE FRAME
-            self.pygame.display.update()
             self.clock.tick(settings.FPS)
 
         self.pygame.quit()

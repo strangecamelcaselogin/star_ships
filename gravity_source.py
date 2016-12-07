@@ -12,12 +12,14 @@ class GravitySource(GameObject):
         self.inf_threshold = inf_threshold
 
     def get_gravity_force(self, game_object):
+        # F_g = G * (m1 * m2) / d**2
+
         direction = self.position - game_object.position
         distance = v2norm(direction)
-        normed_direction = v2unit(direction)
+        direction_unit = v2unit(direction)
 
         gravity_norm = self.G * (game_object.mass * self.mass) / distance ** 2
         if gravity_norm > self.inf_threshold:
             gravity_norm = self.inf_threshold
 
-        return normed_direction * gravity_norm
+        return direction_unit * gravity_norm
