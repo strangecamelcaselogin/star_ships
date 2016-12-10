@@ -12,10 +12,12 @@ from gravity_source import GravitySource
 
 
 class Environment:
-    def __init__(self, pygame, settings_filename):
+    def __init__(self, pygame, settings_filename, debug=True, stop_gravity=False):
         settings.load(settings_filename)
 
-        self.debug = False
+        self.debug = debug
+        self.stop_gravity = stop_gravity
+
         self.stop = False
         self.dt = 1 / settings.FPS
 
@@ -45,7 +47,7 @@ class Environment:
         self.asteroids = []
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * WIDHT, random() * HIGH)
-            initial_velocity = np.array((random() * 3, random() * 3))  # inst speed #np.array((0., 0.))
+            initial_velocity = np.array((0., 0.))  #np.array((random() * 3, random() * 3))  # inst speed #np.array((0., 0.))
             self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
@@ -107,6 +109,9 @@ class Environment:
                 if event.key == self.pygame.K_b:
                     self.debug = not self.debug
 
+                if event.key == self.pygame.K_g:
+                    self.stop_gravity = not self.stop_gravity
+
         keys = self.pygame.key.get_pressed()
 
         if keys[self.pygame.K_w]:
@@ -127,15 +132,23 @@ class Environment:
                 self.bullets.append(bullet)
 
     def update(self):
-        # Add gravity and offer forces
+        # Ship engine force
         self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
-        for g in self.gravity_sources:
-            self.ship.add_forces(g.get_gravity_force(self.ship))
-            for a in self.asteroids:
-                a.add_forces(g.get_gravity_force(a))
 
-            for b in self.bullets:
-                b.add_forces(g.get_gravity_force(b))
+        # Add gravity
+        if not self.stop_gravity:
+            for g in self.gravity_sources:
+                self.ship.add_forces(g.get_gravity_force(self.ship))
+                for a in self.asteroids:
+                    a.add_forces(g.get_gravity_force(a))
+
+                for b in self.bullets:
+                    b.add_forces(g.get_gravity_force(b))
+
+        # Test
+        #f = np.array((-1000000., -1000000.))
+        #for a in self.asteroids:
+        #    a.add_forces(f)
 
         # Update positions
         self.ship.update(self.dt)
@@ -149,16 +162,21 @@ class Environment:
             b.update(self.dt)
 
         # Detect and resolve collisions
-        for a in self.asteroids:
-            ship_contact = self.collision_detect(self.ship, a)
-            if ship_contact:
-                self.collision_resolve(self.ship, a, ship_contact)
+        for count in range(1):
+            for a in self.asteroids:
+                ship_contact = self.collision_detect(self.ship, a)
+                if ship_contact:
+                    self.collision_resolve(self.ship, a, ship_contact)
 
-            for b in self.asteroids:
-                if a is not b:
-                    contact = self.collision_detect(a, b)
-                    if contact:
-                        self.collision_resolve(a, b, contact)
+                for b in self.asteroids:
+                    if a is not b:
+                        contact = self.collision_detect(a, b)
+                        if contact:
+                            self.collision_resolve(a, b, contact)
+
+        self.border_collisions_check(self.ship)
+        for a in self.asteroids:
+            self.border_collisions_check(a)
 
     def render(self):
         # self.surface.fill(settings.white)
@@ -207,12 +225,26 @@ class Environment:
 
     @staticmethod
     def collision_resolve(a, b, contact):
-        # Растолкнуть на deep в соотношении k
-
+        # Растолкнуть a и b на некоторую величину в соотношении k
         direction, factor = contact
-        k = a.mass / b.mass  # TODO include k in calculations
-        a.position -= 0.5 * factor * direction
-        b.position += 0.5 * factor * direction
+
+        k = a.mass / (a.mass + b.mass)
+        a.position -= (1 - k) * factor * direction
+        b.position += k * factor * direction
+
+    @staticmethod
+    def border_collisions_check(a):
+        if a.x - a.radius < 0:
+            a.position[0] = a.radius
+
+        elif a.x + a.radius > settings.DISPLAY_RES[0]:
+            a.position[0] = settings.DISPLAY_RES[0] - a.radius
+
+        if a.y - a.radius < 0:
+            a.position[1] = a.radius
+
+        elif a.y + a.radius > settings.DISPLAY_RES[1]:
+            a.position[1] =  settings.DISPLAY_RES[1] - a.radius
 
     @staticmethod
     def check_kill(check_list):
@@ -253,3 +285,4 @@ class Environment:
             self.clock.tick(settings.FPS)
 
         self.pygame.quit()
+# TODO width and high from settings to self
