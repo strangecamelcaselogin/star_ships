@@ -1,9 +1,9 @@
-# from time import time
+from time import time
 from random import random
 from math import pi
 
 import numpy as np
-from v2math import v2norm  # , v2normal, v2reflect, v2unit
+from v2math import v2norm
 
 from settings_storage import settings
 from ship import Ship
@@ -33,21 +33,26 @@ class Environment:
         else:
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES)
 
-        WIDHT, HIGH = settings.DISPLAY_RES
-
         background_img = self.pygame.image.load(settings.BACKGROUND).convert()  # use .convert()
         self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
 
+        self.ship = None
+        self.bullets = []
+        self.asteroids = []
+        self.gravity_sources = []
+
+        self.init_objects()
+
+    def init_objects(self):
+        WIDHT, HIGH = settings.DISPLAY_RES
         ship_position = (random() * WIDHT, random() * HIGH)
         self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
                          settings.blue)
 
-        self.bullets = []
-
-        self.asteroids = []
+        # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * WIDHT, random() * HIGH)
-            initial_velocity = np.array((0., 0.))  #np.array((random() * 3, random() * 3))  # inst speed #np.array((0., 0.))
+            initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
             self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
@@ -63,6 +68,168 @@ class Environment:
 
     def load_map(self):
         pass
+
+    def handle_events(self):
+        # Check pygame events
+        for event in self.pygame.event.get():
+            if event.type == self.pygame.QUIT:
+                self.stop = True
+
+            if event.type == self.pygame.KEYDOWN:
+                if event.key == self.pygame.K_ESCAPE:
+                    self.stop = True
+
+                if event.key == self.pygame.K_p:
+                    self.pause("PAUSED")
+
+                if event.key == self.pygame.K_b:
+                    self.debug = not self.debug
+
+                if event.key == self.pygame.K_g:
+                    self.stop_gravity = not self.stop_gravity
+
+        # Check raw keys values
+        keys = self.pygame.key.get_pressed()
+
+        if keys[self.pygame.K_w]:
+            self.ship.eng_force_norm = settings.ENG_FORCE
+
+        if keys[self.pygame.K_s]:
+            self.ship.eng_force_norm = -settings.ENG_FORCE
+
+        if keys[self.pygame.K_a]:
+            self.ship.turn(settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_d]:
+            self.ship.turn(-settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_SPACE]:
+            bullet = self.ship.shot()
+            if bullet is not None:
+                self.bullets.append(bullet)
+
+    def apply_forces(self):
+        # Ship engine force
+        self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
+
+        # Add gravity
+        if not self.stop_gravity:
+            for g in self.gravity_sources:
+                self.ship.add_forces(g.get_gravity_force(self.ship))
+                for ast in self.asteroids:
+                    ast.add_forces(g.get_gravity_force(ast))
+
+                for b in self.bullets:
+                    b.add_forces(g.get_gravity_force(b))
+
+    def update(self):
+        # Update positions
+        self.ship.update(self.dt)
+
+        for ast in self.asteroids:
+            ast.update(self.dt)
+
+        for b in self.bullets:
+            b.update(self.dt)
+
+    def handle_collisions(self, iterations):
+        """
+        Detect and resolve collisions
+        """
+        for count in range(iterations):
+            # Object to object
+            for ast in self.asteroids:
+                self.object_collisions(self.ship, ast)
+
+                for ast2 in self.asteroids:
+                    if ast is not ast2:
+                        self.object_collisions(ast, ast2)
+
+                for b in self.bullets:
+                    self.object_collisions(ast, b)
+
+            # Object to border
+            self.border_collisions(self.ship)
+            for ast in self.asteroids:
+                self.border_collisions(ast)
+
+    def render(self):
+        # self.surface.fill(settings.white)
+        self.surface.blit(self.background_image, (0, 0))
+
+        [g.render(width=0) for g in self.gravity_sources]
+        [a.render() for a in self.asteroids]
+        [b.render() for b in self.bullets]
+        self.ship.render(width=0)
+
+        if self.debug:
+            [a.render_debug() for a in self.asteroids]
+            self.ship.render_debug()
+
+    def render_hud(self, cycle_time):
+        cycle_percent = cycle_time / self.dt * 100
+        fps_label = self.text.render('FPS:{}, cycle_time:{}%'.format(round(self.clock.get_fps()), round(cycle_percent)),
+                                     1, settings.white)
+        self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
+
+        data = self.text.render('|F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}'
+                                .format(np.round(v2norm(self.ship.total_force), decimals=1),
+                                        self.ship.eng_force_norm,
+                                        np.around(self.ship.position, decimals=1),
+                                        np.round(v2norm(self.ship.inst_velocity / self.dt), decimals=1),
+                                        np.round(v2norm(self.ship.acceleration), decimals=1),
+                                        np.round(self.ship.angle / pi, decimals=1),
+                                        len(self.bullets)),
+                                1, settings.white)
+
+        self.surface.blit(data, (10, 10))
+
+    @staticmethod
+    def object_collisions(a, b):
+        direction = a.position - b.position
+        distance = v2norm(direction)
+        radius_sum = a.radius + b.radius
+        if distance <= radius_sum:
+            factor = (distance - radius_sum) / distance
+            k = a.mass / (a.mass + b.mass)
+            a.position -= (1 - k) * factor * direction
+            b.position += k * factor * direction
+
+            return True
+
+        return False
+
+    @staticmethod
+    def border_collisions(a):
+        if a.x - a.radius < 0:
+            a.position[0] = a.radius
+
+        elif a.x + a.radius > settings.DISPLAY_RES[0]:
+            a.position[0] = settings.DISPLAY_RES[0] - a.radius
+
+        if a.y - a.radius < 0:
+            a.position[1] = a.radius
+
+        elif a.y + a.radius > settings.DISPLAY_RES[1]:
+            a.position[1] = settings.DISPLAY_RES[1] - a.radius
+
+    @staticmethod
+    def check_kill(check_list):
+        i = 0
+        l = len(check_list)
+        while l > 0 and i < l:  # !!!
+            x, y = check_list[i].position
+            if x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]:
+                check_list.pop(i)
+
+            else:
+                i += 1
+
+            l = len(check_list)
+
+    def play_sound(self, filename):
+        sound = self.pygame.mixer.Sound(filename)
+        sound.play(loops=-1)
 
     def pause(self, message):
         WIDHT, HIGH = settings.DISPLAY_RES
@@ -89,179 +256,9 @@ class Environment:
 
             self.clock.tick(settings.FPS)
 
-    def play_sound(self, filename):
-        sound = self.pygame.mixer.Sound(filename)
-        sound.play(loops=-1)
-
-    def events(self):
-        # Check pygame events and raw keys values
-        for event in self.pygame.event.get():
-            if event.type == self.pygame.QUIT:
-                self.stop = True
-
-            if event.type == self.pygame.KEYDOWN:
-                if event.key == self.pygame.K_ESCAPE:
-                    self.stop = True
-
-                if event.key == self.pygame.K_p:
-                    self.pause("PAUSED")
-
-                if event.key == self.pygame.K_b:
-                    self.debug = not self.debug
-
-                if event.key == self.pygame.K_g:
-                    self.stop_gravity = not self.stop_gravity
-
-        keys = self.pygame.key.get_pressed()
-
-        if keys[self.pygame.K_w]:
-            self.ship.eng_force_norm = settings.ENG_FORCE
-
-        if keys[self.pygame.K_s]:
-            self.ship.eng_force_norm = -settings.ENG_FORCE
-
-        if keys[self.pygame.K_a]:
-            self.ship.turn(settings.da * pi, self.dt)
-
-        if keys[self.pygame.K_d]:
-            self.ship.turn(-settings.da * pi, self.dt)
-
-        if keys[self.pygame.K_SPACE]:
-            bullet = self.ship.shot()
-            if bullet is not None:
-                self.bullets.append(bullet)
-
-    def update(self):
-        # Ship engine force
-        self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
-
-        # Add gravity
-        if not self.stop_gravity:
-            for g in self.gravity_sources:
-                self.ship.add_forces(g.get_gravity_force(self.ship))
-                for a in self.asteroids:
-                    a.add_forces(g.get_gravity_force(a))
-
-                for b in self.bullets:
-                    b.add_forces(g.get_gravity_force(b))
-
-        # Test
-        #f = np.array((-1000000., -1000000.))
-        #for a in self.asteroids:
-        #    a.add_forces(f)
-
-        # Update positions
-        self.ship.update(self.dt)
-        for a in self.asteroids:
-            a.update(self.dt)
-
-        for g in self.gravity_sources:
-            g.update(self.dt)
-
-        for b in self.bullets:
-            b.update(self.dt)
-
-        # Detect and resolve collisions
-        for count in range(1):
-            for a in self.asteroids:
-                ship_contact = self.collision_detect(self.ship, a)
-                if ship_contact:
-                    self.collision_resolve(self.ship, a, ship_contact)
-
-                for b in self.asteroids:
-                    if a is not b:
-                        contact = self.collision_detect(a, b)
-                        if contact:
-                            self.collision_resolve(a, b, contact)
-
-        self.border_collisions_check(self.ship)
-        for a in self.asteroids:
-            self.border_collisions_check(a)
-
-    def render(self):
-        # self.surface.fill(settings.white)
-        self.surface.blit(self.background_image, (0, 0))
-
-        self.render_hud()
-
-        [g.render(width=0) for g in self.gravity_sources]
-        [a.render() for a in self.asteroids]
-        [b.render() for b in self.bullets]
-        self.ship.render(width=0)
-
-        if self.debug:
-            [a.render_debug() for a in self.asteroids]
-            self.ship.render_debug()
-
-        # Update frame
-        self.pygame.display.update()
-
-    def render_hud(self):
-        fps_label = self.text.render('FPS:{}'.format(round(self.clock.get_fps())), 1, settings.white)
-        self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
-
-        data = self.text.render('|F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}'
-                                .format(np.round(v2norm(self.ship.total_force), decimals=1),
-                                        self.ship.eng_force_norm,
-                                        np.around(self.ship.position, decimals=1),
-                                        np.round(v2norm(self.ship.inst_velocity / self.dt), decimals=1),
-                                        np.round(v2norm(self.ship.acceleration), decimals=1),
-                                        np.round(self.ship.angle / pi, decimals=1),
-                                        len(self.bullets)),
-                                1, settings.white)
-
-        self.surface.blit(data, (10, 10))
-
-    @staticmethod
-    def collision_detect(a, b):
-        direction = a.position - b.position
-        distance = v2norm(direction)
-        radius_sum = a.radius + b.radius
-        if distance <= radius_sum:
-            factor = (distance - radius_sum) / distance
-            return direction, factor
-
-        return None
-
-    @staticmethod
-    def collision_resolve(a, b, contact):
-        # Растолкнуть a и b на некоторую величину в соотношении k
-        direction, factor = contact
-
-        k = a.mass / (a.mass + b.mass)
-        a.position -= (1 - k) * factor * direction
-        b.position += k * factor * direction
-
-    @staticmethod
-    def border_collisions_check(a):
-        if a.x - a.radius < 0:
-            a.position[0] = a.radius
-
-        elif a.x + a.radius > settings.DISPLAY_RES[0]:
-            a.position[0] = settings.DISPLAY_RES[0] - a.radius
-
-        if a.y - a.radius < 0:
-            a.position[1] = a.radius
-
-        elif a.y + a.radius > settings.DISPLAY_RES[1]:
-            a.position[1] =  settings.DISPLAY_RES[1] - a.radius
-
-    @staticmethod
-    def check_kill(check_list):
-        i = 0
-        l = len(check_list)
-        while l > 0 and i < l:  # !!!
-            x, y = check_list[i].position
-            if x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]:
-                check_list.pop(i)
-
-            else:
-                i += 1
-
-            l = len(check_list)
-
     def run(self):
         while not self.stop:
+            timer = time()
             self.ship.eng_force_norm = 0
             self.ship.reset_forces()
             for a in self.asteroids:
@@ -270,19 +267,20 @@ class Environment:
             for b in self.bullets:
                 b.reset_forces()
 
-            # Kill all bullets outside screen
-            self.check_kill(self.bullets)
+            self.check_kill(self.bullets)  # Kill all bullets outside screen
 
-            # Events and keys
-            self.events()
+            self.handle_events()  # Events and keys
 
-            # Add Forces, Update all objects, check collisions
-            self.update()
+            self.apply_forces()  # Add Forces
+            self.update()  # Update all objects
+            self.handle_collisions(1)
 
-            # Render all objects
-            self.render()
+            timer = time() - timer
+            self.render()  # Render all objects
+            self.render_hud(timer)  # Render HUD
 
+            # Update frame
+            self.pygame.display.update()
             self.clock.tick(settings.FPS)
 
         self.pygame.quit()
-# TODO width and high from settings to self
