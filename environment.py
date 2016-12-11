@@ -3,8 +3,9 @@ from random import random
 from math import pi
 
 import numpy as np
-from v2math import v2norm
+from PIL import Image
 
+from v2math import v2norm
 from settings_storage import settings
 from ship import Ship
 from asteroid import Asteroid
@@ -33,8 +34,12 @@ class Environment:
         else:
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES)
 
-        background_img = self.pygame.image.load(settings.BACKGROUND).convert()  # use .convert()
-        self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
+        background_img = self.pygame.image.load(settings.BACKGROUND)
+        map_image = self.pygame.image.load(settings.MAP_IMG)
+        background_img.blit(map_image, (0, 0))
+
+        # convert_alpha()
+        self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES).convert()
 
         self.ship = None
         self.bullets = []
@@ -43,15 +48,17 @@ class Environment:
 
         self.init_objects()
 
+        self.binmap = self.load_binmap()
+
     def init_objects(self):
-        WIDHT, HIGH = settings.DISPLAY_RES
-        ship_position = (random() * WIDHT, random() * HIGH)
+        width, height = settings.DISPLAY_RES
+        ship_position = (random() * width, random() * height)
         self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
                          settings.blue)
 
         # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
-            initial_position = (random() * WIDHT, random() * HIGH)
+            initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
             self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
@@ -60,14 +67,21 @@ class Environment:
         inf_threshold = 10 ** 7  # max gravity force
         mass = 5.97 * 10 ** 16
         self.gravity_sources = [
-            GravitySource(self.pygame, self.surface, 25, mass, (WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE),
+            GravitySource(self.pygame, self.surface, 25, mass, (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
                           settings.black, settings.G, inf_threshold),
             GravitySource(self.pygame, self.surface, 25, mass,
-                          (2 * WIDHT / 3 / settings.SCALE, HIGH / 2 / settings.SCALE), settings.black, settings.G,
+                          (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
                           inf_threshold)]
 
-    def load_map(self):
-        pass
+    @staticmethod
+    def load_binmap():
+        map_img = Image.open(settings.MAP_IMG)
+        width, height = map_img.size
+
+        temp = list(map_img.getdata())
+        binmap = [temp[i * width:(i + 1) * width] for i in range(height)]
+
+        return binmap
 
     def handle_events(self):
         # Check pygame events

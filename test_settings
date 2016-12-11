@@ -15,8 +15,8 @@
 'FULLSCREEN': True,
 'FPS': 60,                          # Target FPS
 'DISPLAY_RES': (800, 600),          # If not FULLSCREEN
-'PATH_TO_MAP': './map',
-'BACKGROUND': './pic/space.jpg',
+'MAP_IMG': './map/map_1.png',
+'BACKGROUND': './pic/space_1.png',
 
 #  ENVIRONMENT SETTINGS
 'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
@@ -33,7 +33,7 @@
 'SHIP_RADIUS': 10,
 
 #  SHIP GUN SETTINGS
-'COOLDOWN': 0.01,                    # Cool down in seconds
+'COOLDOWN': 0.1,                    # Cool down in seconds
 'BULLET_VELOCITY': 800,             # m/s
 'BULLET_MASS': 1,
 'BULLET_RADIUS': 5
