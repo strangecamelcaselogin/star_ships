@@ -4,4 +4,5 @@
 ## Зависимости
  - numpy
  - pygame
+ - PIL
  
