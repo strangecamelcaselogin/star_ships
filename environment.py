@@ -3,13 +3,13 @@ from random import random
 from math import pi
 
 import numpy as np
-from PIL import Image
 
 from v2math import v2norm
 from settings_storage import settings
 from ship import Ship
 from asteroid import Asteroid
 from gravity_source import GravitySource
+from space_map import SpaceMap
 
 
 class Environment:
@@ -29,16 +29,17 @@ class Environment:
         self.text = self.pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE)
 
         if settings.FULLSCREEN:
-            settings.DISPLAY_RES = self.pygame.display.list_modes()[0]  # Выбираем наибольшее доступное разрешение
+            # Выбираем наибольшее доступное разрешение
+            settings.DISPLAY_RES = self.pygame.display.list_modes()[0]
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES, self.pygame.FULLSCREEN)
         else:
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES)
 
         background_img = self.pygame.image.load(settings.BACKGROUND)
         map_image = self.pygame.image.load(settings.MAP_IMG)
-        background_img.blit(map_image, (0, 0))
+        background_img.blit(map_image, (0, 0))  # Накладываем карту на картинку
 
-        # convert_alpha()
+        # convert() приводит pixelformat к такому же как и у surface, добавляет производительности
         self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES).convert()
 
         self.ship = None
@@ -48,7 +49,7 @@ class Environment:
 
         self.init_objects()
 
-        self.binmap = self.load_binmap()
+        self.map = SpaceMap(settings.DISPLAY_RES, settings.MAP_IMG)  # TODO scale etc
 
     def init_objects(self):
         width, height = settings.DISPLAY_RES
@@ -72,16 +73,6 @@ class Environment:
             GravitySource(self.pygame, self.surface, 25, mass,
                           (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
                           inf_threshold)]
-
-    @staticmethod
-    def load_binmap():
-        map_img = Image.open(settings.MAP_IMG)
-        width, height = map_img.size
-
-        temp = list(map_img.getdata())
-        binmap = [temp[i * width:(i + 1) * width] for i in range(height)]
-
-        return binmap
 
     def handle_events(self):
         # Check pygame events
@@ -160,7 +151,9 @@ class Environment:
                         self.object_collisions(ast, ast2)
 
                 for b in self.bullets:
-                    self.object_collisions(ast, b)
+                    contact = self.object_collisions(ast, b)
+                    if contact:
+                        ast.color = settings.red
 
             # Object to border
             self.border_collisions(self.ship)

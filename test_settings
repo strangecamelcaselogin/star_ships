@@ -33,7 +33,7 @@
 'SHIP_RADIUS': 10,
 
 #  SHIP GUN SETTINGS
-'COOLDOWN': 0.1,                    # Cool down in seconds
+'COOLDOWN': 0.01,                    # Cool down in seconds
 'BULLET_VELOCITY': 800,             # m/s
 'BULLET_MASS': 1,
 'BULLET_RADIUS': 5
