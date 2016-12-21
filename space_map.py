@@ -2,15 +2,19 @@ from PIL import Image
 
 
 class SpaceMap:
-    def __init__(self, resolution, path):
-        self.binmap = self.load_binmap(path)
+    def __init__(self, pygame, resolution, map_path):
+        self.pygame = pygame
 
-    @staticmethod
-    def load_binmap(path):
-        map_img = Image.open(path)
-        width, height = map_img.size
+        map_path = './map/test.png'
+        img = self.pygame.image.load(map_path)
+        img = self.pygame.transform.scale(img, resolution)
+        self.map_image = img.copy()
 
-        temp = list(map_img.getdata())
-        binmap = [temp[i * width:(i + 1) * width] for i in range(height)]
+        # TODO scaled pygame image -> list(list())
+        self.binmap = self.load_binmap(img)
 
-        return binmap
+    def load_binmap(self, img):
+        # pxarray[0] - столбец
+        pxarray = self.pygame.PixelArray(img).transpose()
+        print(pxarray[0])
+        return pxarray

@@ -36,11 +36,14 @@ class Environment:
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES)
 
         background_img = self.pygame.image.load(settings.BACKGROUND)
-        map_image = self.pygame.image.load(settings.MAP_IMG)
-        background_img.blit(map_image, (0, 0))  # Накладываем карту на картинку
+        background_img = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
+
+        self.map = SpaceMap(self.pygame, settings.DISPLAY_RES, settings.MAP_IMG)
+
+        background_img.blit(self.map.map_image, (0, 0))  # Накладываем карту на картинку
 
         # convert() приводит pixelformat к такому же как и у surface, добавляет производительности
-        self.background_image = self.pygame.transform.scale(background_img, settings.DISPLAY_RES).convert()
+        self.background_image = background_img.convert()
 
         self.ship = None
         self.bullets = []
@@ -48,8 +51,6 @@ class Environment:
         self.gravity_sources = []
 
         self.init_objects()
-
-        self.map = SpaceMap(settings.DISPLAY_RES, settings.MAP_IMG)  # TODO scale etc
 
     def init_objects(self):
         width, height = settings.DISPLAY_RES
@@ -266,6 +267,7 @@ class Environment:
     def run(self):
         while not self.stop:
             timer = time()
+
             self.ship.eng_force_norm = 0
             self.ship.reset_forces()
             for a in self.asteroids:
