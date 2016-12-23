@@ -56,13 +56,13 @@ class Environment:
         width, height = settings.DISPLAY_RES
         ship_position = (random() * width, random() * height)
         self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
-                         settings.blue)
+                         settings.blue, settings.SHIP_IMG, settings.COUNT_ANGLES)
 
         # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
-            self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
+            self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
         # Gravity sources
