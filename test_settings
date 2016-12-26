@@ -33,7 +33,6 @@
 'ENG_FORCE': 5 * 10**5,             # Norm of engine force
 'da': 1.8,                          # Angle (da * pi) to turn ship
 'SHIP_RADIUS': 50,
-'COUNT_ANGLES': 36,
 
 #  SHIP GUN SETTINGS
 'COOLDOWN': 0.01,                    # Cool down in seconds

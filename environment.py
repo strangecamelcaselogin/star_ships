@@ -56,7 +56,7 @@ class Environment:
         width, height = settings.DISPLAY_RES
         ship_position = (random() * width, random() * height)
         self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
-                         settings.blue, settings.SHIP_IMG, settings.COUNT_ANGLES)
+                         settings.blue, settings.SHIP_IMG)
 
         # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
