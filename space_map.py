@@ -15,5 +15,5 @@ class SpaceMap:
 
     def load_binmap(self, img):
         pxarray = self.pygame.PixelArray(img).transpose()
-        print(pxarray[0])
+        # print(pxarray[0])
         return pxarray
