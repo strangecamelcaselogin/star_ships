@@ -45,7 +45,7 @@ class Environment:
         # convert() приводит pixelformat к такому же как и у surface, добавляет производительности
         self.background_image = background_img.convert()
 
-        self.ship = None
+        self.ships = []
         self.bullets = []
         self.asteroids = []
         self.gravity_sources = []
@@ -54,15 +54,19 @@ class Environment:
 
     def init_objects(self):
         width, height = settings.DISPLAY_RES
-        ship_position = (random() * width, random() * height)
-        self.ship = Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_position,
-                         settings.blue)
+        ship_0_position = (random() * width, random() * height)
+        ship_1_position = (random() * width, random() * height)
+        self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_0_position,
+                         settings.blue, settings.SHIP_0_IMG)]
+
+        self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_1_position,
+                            settings.blue, settings.SHIP_1_IMG)]
 
         # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
-            self.asteroids.append(Asteroid(self.pygame, self.surface, 10, settings.ASTEROID_MASS,
+            self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
                                            initial_position, initial_velocity, settings.white))
 
         # Gravity sources
@@ -94,34 +98,55 @@ class Environment:
                 if event.key == self.pygame.K_g:
                     self.stop_gravity = not self.stop_gravity
 
-        # Check raw keys values
+        # Check raw keys values for ship 0
         keys = self.pygame.key.get_pressed()
 
         if keys[self.pygame.K_w]:
-            self.ship.eng_force_norm = settings.ENG_FORCE
+            self.ships[0].eng_force_norm = settings.ENG_FORCE
 
         if keys[self.pygame.K_s]:
-            self.ship.eng_force_norm = -settings.ENG_FORCE
+            self.ships[0].eng_force_norm = -settings.ENG_FORCE
 
         if keys[self.pygame.K_a]:
-            self.ship.turn(settings.da * pi, self.dt)
+            self.ships[0].turn(settings.da * pi, self.dt)
 
         if keys[self.pygame.K_d]:
-            self.ship.turn(-settings.da * pi, self.dt)
+            self.ships[0].turn(-settings.da * pi, self.dt)
 
         if keys[self.pygame.K_SPACE]:
-            bullet = self.ship.shot()
+            bullet = self.ships[0].shot()
             if bullet is not None:
                 self.bullets.append(bullet)
 
+        # Check raw keys values for ship 1
+        if keys[self.pygame.K_UP]:
+            self.ships[1].eng_force_norm = settings.ENG_FORCE
+
+        if keys[self.pygame.K_DOWN]:
+            self.ships[1].eng_force_norm = -settings.ENG_FORCE
+
+        if keys[self.pygame.K_LEFT]:
+            self.ships[1].turn(settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_RIGHT]:
+            self.ships[1].turn(-settings.da * pi, self.dt)
+
+        if keys[self.pygame.K_RETURN]:
+            bullet = self.ships[1].shot()
+            if bullet is not None:
+                self.bullets.append(bullet)
+
+
     def apply_forces(self):
         # Ship engine force
-        self.ship.add_forces(self.ship.direction * self.ship.eng_force_norm)
+        for ship in self.ships:
+            ship.add_forces(ship.direction * ship.eng_force_norm)
 
         # Add gravity
         if not self.stop_gravity:
             for g in self.gravity_sources:
-                self.ship.add_forces(g.get_gravity_force(self.ship))
+                for ship in self.ships:
+                    ship.add_forces(g.get_gravity_force(ship))
                 for ast in self.asteroids:
                     ast.add_forces(g.get_gravity_force(ast))
 
@@ -130,7 +155,8 @@ class Environment:
 
     def update(self):
         # Update positions
-        self.ship.update(self.dt)
+        self.ships[0].update(self.dt)
+        self.ships[1].update(self.dt)
 
         for ast in self.asteroids:
             ast.update(self.dt)
@@ -144,8 +170,10 @@ class Environment:
         """
         for count in range(iterations):
             # Object to object
+            self.object_collisions(self.ships[0], self.ships[1])
             for ast in self.asteroids:
-                self.object_collisions(self.ship, ast)
+                self.object_collisions(self.ships[0], ast)
+                self.object_collisions(self.ships[1], ast)
 
                 for ast2 in self.asteroids:
                     if ast is not ast2:
@@ -157,7 +185,8 @@ class Environment:
                         ast.color = settings.red
 
             # Object to border
-            self.border_collisions(self.ship)
+            self.border_collisions(self.ships[0])
+            self.border_collisions(self.ships[1])
             for ast in self.asteroids:
                 self.border_collisions(ast)
 
@@ -168,11 +197,13 @@ class Environment:
         [g.render(width=0) for g in self.gravity_sources]
         [a.render() for a in self.asteroids]
         [b.render() for b in self.bullets]
-        self.ship.render(width=0)
+        self.ships[0].render(width=0)
+        self.ships[1].render(width=0)
 
         if self.debug:
             [a.render_debug() for a in self.asteroids]
-            self.ship.render_debug()
+            self.ships[0].render_debug()
+            self.ships[1].render_debug()
 
     def render_hud(self, cycle_time):
         cycle_percent = cycle_time / self.dt * 100
@@ -181,12 +212,12 @@ class Environment:
         self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
 
         data = self.text.render('|F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}'
-                                .format(np.round(v2norm(self.ship.total_force), decimals=1),
-                                        self.ship.eng_force_norm,
-                                        np.around(self.ship.position, decimals=1),
-                                        np.round(v2norm(self.ship.inst_velocity / self.dt), decimals=1),
-                                        np.round(v2norm(self.ship.acceleration), decimals=1),
-                                        np.round(self.ship.angle / pi, decimals=1),
+                                .format(np.round(v2norm(self.ships[0].total_force), decimals=1),
+                                        self.ships[0].eng_force_norm,
+                                        np.around(self.ships[0].position, decimals=1),
+                                        np.round(v2norm(self.ships[0].inst_velocity / self.dt), decimals=1),
+                                        np.round(v2norm(self.ships[0].acceleration), decimals=1),
+                                        np.round(self.ships[0].angle / pi, decimals=1),
                                         len(self.bullets)),
                                 1, settings.white)
 
@@ -198,7 +229,10 @@ class Environment:
         distance = v2norm(direction)
         radius_sum = a.radius + b.radius
         if distance <= radius_sum:
-            factor = (distance - radius_sum) / distance
+            if distance != 0:
+                factor = (distance - radius_sum) / distance
+            else:
+                factor = (distance - radius_sum)
             k = a.mass / (a.mass + b.mass)
             a.position -= (1 - k) * factor * direction
             b.position += k * factor * direction
@@ -268,8 +302,9 @@ class Environment:
         while not self.stop:
             timer = time()
 
-            self.ship.eng_force_norm = 0
-            self.ship.reset_forces()
+            for ship in self.ships:
+                ship.eng_force_norm = 0
+                ship.reset_forces()
             for a in self.asteroids:
                 a.reset_forces()
 

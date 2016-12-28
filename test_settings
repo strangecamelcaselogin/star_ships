@@ -17,12 +17,15 @@
 'DISPLAY_RES': (800, 600),          # If not FULLSCREEN
 'MAP_IMG': './map/map_1.png',
 'BACKGROUND': './pic/space_1.png',
+'SHIP_0_IMG': './pic/millennium_falcon.png',
+'SHIP_1_IMG': './pic/interstellar_ship.png',
 
 #  ENVIRONMENT SETTINGS
 'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
 'G': 6.67 * 10 ** (-11),            # CONST
 
 #  ASTEROIDS SETTINGS
+'ASTEROID_RADIUS': 10,
 'ASTEROIDS_CNT': 15,
 'ASTEROID_MASS': 10 * 10 ** 3,
 
@@ -30,7 +33,7 @@
 'SHIP_MASS': 5 * 10**3,
 'ENG_FORCE': 5 * 10**5,             # Norm of engine force
 'da': 1.8,                          # Angle (da * pi) to turn ship
-'SHIP_RADIUS': 10,
+'SHIP_RADIUS': 40,
 
 #  SHIP GUN SETTINGS
 'COOLDOWN': 0.01,                    # Cool down in seconds

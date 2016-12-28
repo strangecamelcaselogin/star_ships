@@ -14,7 +14,6 @@ class SpaceMap:
         self.binmap = self.load_binmap(img)
 
     def load_binmap(self, img):
-        # pxarray[0] - столбец
         pxarray = self.pygame.PixelArray(img).transpose()
-        print(pxarray[0])
+        # print(pxarray[0])
         return pxarray
