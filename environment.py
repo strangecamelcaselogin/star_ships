@@ -136,7 +136,6 @@ class Environment:
             if bullet is not None:
                 self.bullets.append(bullet)
 
-
     def apply_forces(self):
         # Ship engine force
         for ship in self.ships:

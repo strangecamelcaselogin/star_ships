@@ -29,6 +29,7 @@ class GameObject:
         self.total_force = np.array((0., 0.))
 
         self.color = color
+        self.health = 100
 
     def add_forces(self, *forces):
         self.total_force += sum(forces)  # Добавляем силы, действующие на объект
@@ -66,3 +67,7 @@ class GameObject:
         # Total Force vector
         fx, fy = (int(f * self.radius) for f in v2unit(self.total_force))
         self.pygame.draw.line(self.surface, settings.yellow, (self.x, self.y), (self.x + fx, self.y + fy))
+
+    def damage(self, cnt):
+        if self.health - cnt > 0:
+            self.health -= cnt

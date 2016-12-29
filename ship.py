@@ -19,12 +19,9 @@ class Ship(GameObject):
         # pxarray = self.pygame.PixelArray(ship_img.copy()).transpose()
         # ship_img = pxarray.surface
 
-
     def turn(self, delta, dt):
         self.angle += delta * dt
         self.angle %= 2 * pi
-        # print(self.angle)
-
 
     def render(self, width=1):
         # super().render(width)
