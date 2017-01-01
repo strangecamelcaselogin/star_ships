@@ -22,7 +22,7 @@
 
 #  ENVIRONMENT SETTINGS
 'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
-'G': 6.67 * 10 ** (-11),            # CONST
+'G': 6.67 * 10 ** (-11),            # GRAVITY CONST
 
 #  ASTEROIDS SETTINGS
 'ASTEROID_RADIUS': 10,
@@ -36,8 +36,9 @@
 'SHIP_RADIUS': 40,
 
 #  SHIP GUN SETTINGS
-'COOLDOWN': 0.01,                    # Cool down in seconds
+'FIRE_RATE': 600,                   # SHOTS PER MINUTE
 'BULLET_VELOCITY': 800,             # m/s
 'BULLET_MASS': 1,
-'BULLET_RADIUS': 5
+'BULLET_RADIUS': 5,
+'BULLET_TTL': 1.5                   # TTL in seconds
 }

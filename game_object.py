@@ -68,6 +68,9 @@ class GameObject:
         fx, fy = (int(f * self.radius) for f in v2unit(self.total_force))
         self.pygame.draw.line(self.surface, settings.yellow, (self.x, self.y), (self.x + fx, self.y + fy))
 
-    def damage(self, cnt):
+    def make_damage(self, cnt):
         if self.health - cnt > 0:
             self.health -= cnt
+
+        else:
+            self.health = 0

@@ -256,17 +256,13 @@ class Environment:
 
     @staticmethod
     def check_kill(check_list):
-        i = 0
-        l = len(check_list)
-        while l > 0 and i < l:  # !!!
-            x, y = check_list[i].position
-            if x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]:
-                check_list.pop(i)
+        #def screen_border_filter(e):
+        #    x, y = e.position
+        #    return x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]
 
-            else:
-                i += 1
-
-            l = len(check_list)
+        for elem in check_list[:]:
+            if elem.health == 0:  # screen_border_filter(elem):
+                check_list.remove(elem)
 
     def play_sound(self, filename):
         sound = self.pygame.mixer.Sound(filename)
