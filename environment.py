@@ -114,7 +114,7 @@ class Environment:
             self.ships[0].turn(-settings.da * pi, self.dt)
 
         if keys[self.pygame.K_SPACE]:
-            bullet = self.ships[0].shot()
+            bullet = self.ships[0].shot(self.dt)
             if bullet is not None:
                 self.bullets.append(bullet)
 
@@ -132,7 +132,7 @@ class Environment:
             self.ships[1].turn(-settings.da * pi, self.dt)
 
         if keys[self.pygame.K_RETURN]:
-            bullet = self.ships[1].shot()
+            bullet = self.ships[1].shot(self.dt)
             if bullet is not None:
                 self.bullets.append(bullet)
 

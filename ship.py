@@ -10,7 +10,8 @@ class Ship(GameObject):
         super().__init__(pygame, surface, radius, angle, mass, position, color, health)
         self.eng_force_norm = 0
 
-        self.cool_down = int((settings.FPS * 60) / settings.FIRE_RATE)
+        self.cool_down = int(
+            (settings.FPS * 60) / settings.FIRE_RATE)  # Сколько итераций до слдующей возможности выстреить
         self.cd_counter = 0
         self.bullet_velocity = settings.BULLET_VELOCITY
         self.bullet_mass = settings.BULLET_MASS
@@ -45,9 +46,15 @@ class Ship(GameObject):
         dirx, diry = (int(d * self.radius) for d in self.direction)
         self.pygame.draw.line(self.surface, settings.red, (self.x, self.y), (self.x + dirx, self.y + diry))
 
-    def shot(self):
+    def shot(self, dt):
         if self.cd_counter == 0:
             self.cd_counter = self.cool_down
+            # recoil by shot
+            # self.bullet_velocity is speed in m/s
+            f = self.bullet_velocity / dt * self.bullet_mass
+            f = -1 * self.direction * f
+            self.add_forces(f)
+
             inst_velocity = self.direction * self.bullet_velocity / settings.FPS + self.inst_velocity
             # for avoid collisions with ship
             inst_position = self.position + self.direction * (self.radius + self.bullet_radius)
