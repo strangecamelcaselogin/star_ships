@@ -57,17 +57,17 @@ class Environment:
         ship_0_position = (random() * width, random() * height)
         ship_1_position = (random() * width, random() * height)
         self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_0_position,
-                         settings.blue, settings.SHIP_0_IMG)]
+                         settings.blue, settings.SHIP_HEALTH, settings.SHIP_0_IMG)]
 
         self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_1_position,
-                            settings.blue, settings.SHIP_1_IMG)]
+                            settings.blue, settings.SHIP_HEALTH, settings.SHIP_1_IMG)]
 
         # Asteroids
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
             self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
-                                           initial_position, initial_velocity, settings.white))
+                                           initial_position, initial_velocity, settings.white, settings.ASTEROID_HEALTH))
 
         # Gravity sources
         inf_threshold = 10 ** 7  # max gravity force
@@ -154,8 +154,9 @@ class Environment:
 
     def update(self):
         # Update positions
-        self.ships[0].update(self.dt)
-        self.ships[1].update(self.dt)
+        for ship in self.ships:
+            ship.update(self.dt)
+            ship.update(self.dt)
 
         for ast in self.asteroids:
             ast.update(self.dt)
@@ -182,6 +183,16 @@ class Environment:
                     contact = self.object_collisions(ast, b)
                     if contact:
                         ast.color = settings.red
+                        ast.make_damage(b.cnt_damage)
+                        b.health = 0
+
+            # ship to bullets
+            for ship in self.ships:
+                for b in self.bullets:
+                    contact = self.object_collisions(ship, b)
+                    if contact:
+                        ship.make_damage(b.cnt_damage)
+                        b.health = 0
 
             # Object to border
             self.border_collisions(self.ships[0])
@@ -196,8 +207,7 @@ class Environment:
         [g.render(width=0) for g in self.gravity_sources]
         [a.render() for a in self.asteroids]
         [b.render() for b in self.bullets]
-        self.ships[0].render(width=0)
-        self.ships[1].render(width=0)
+        [s.render(width=0) for s in self.ships]
 
         if self.debug:
             [a.render_debug() for a in self.asteroids]
@@ -210,17 +220,24 @@ class Environment:
                                      1, settings.white)
         self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
 
-        data = self.text.render('|F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}'
+        data_0 = self.text.render('ship_0: |F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}, health:{};'
                                 .format(np.round(v2norm(self.ships[0].total_force), decimals=1),
                                         self.ships[0].eng_force_norm,
                                         np.around(self.ships[0].position, decimals=1),
                                         np.round(v2norm(self.ships[0].inst_velocity / self.dt), decimals=1),
                                         np.round(v2norm(self.ships[0].acceleration), decimals=1),
                                         np.round(self.ships[0].angle / pi, decimals=1),
-                                        len(self.bullets)),
+                                        len(self.bullets),
+                                        self.ships[0].health
+                                        ),
                                 1, settings.white)
 
-        self.surface.blit(data, (10, 10))
+        self.surface.blit(data_0, (10, 10))
+
+        data_1 = self.text.render('ship_1: health:{}'
+                                  .format(self.ships[1].health),
+                                  1, settings.white)
+        self.surface.blit(data_1, (settings.DISPLAY_RES[0] - 250, settings.DISPLAY_RES[1] - 20))
 
     @staticmethod
     def object_collisions(a, b):
@@ -306,9 +323,10 @@ class Environment:
             for b in self.bullets:
                 b.reset_forces()
 
-            self.check_kill(self.bullets)  # Kill all bullets outside screen
-
             self.handle_events()  # Events and keys
+
+            self.check_kill(self.bullets)  # remove died objects
+            self.check_kill(self.asteroids)
 
             self.apply_forces()  # Add Forces
             self.update()  # Update all objects
@@ -321,5 +339,12 @@ class Environment:
             # Update frame
             self.pygame.display.update()
             self.clock.tick(settings.FPS)
+
+            if self.ships[0].health == 0 or self.ships[1].health == 0:
+                self.stop = True
+
+        for i, ship in enumerate(self.ships):
+            if ship.health == 0:
+                print('PLAYER {} WIN!!!'.format(1 - i))
 
         self.pygame.quit()
