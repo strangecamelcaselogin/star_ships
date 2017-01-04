@@ -79,5 +79,5 @@ class GameObject:
         else:
             self.health = 0
 
-    def get_tail(self):
+    def get_tile(self):
         pass
