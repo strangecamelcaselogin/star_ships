@@ -156,7 +156,6 @@ class Environment:
         # Update positions
         for ship in self.ships:
             ship.update(self.dt)
-            ship.update(self.dt)
 
         for ast in self.asteroids:
             ast.update(self.dt)
