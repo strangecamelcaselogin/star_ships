@@ -36,6 +36,10 @@ class GameObject:
 
     def update(self, dt):
         """
+        Euler:
+        v_i+1 = v_i + a * dt
+        p_i+1 = p_i + v_i+1 * dt
+
         Verlet:                   p_i+1 = p_i + p_i - p_(i-1) + a * dt * dt
         Time Corrected Verlet:    p_i+1 = p_i + (p_i - p_(i-1)) * (dt / prev_dt) + a * dt * dt
         """
@@ -74,3 +78,6 @@ class GameObject:
 
         else:
             self.health = 0
+
+    def get_tail(self):
+        pass

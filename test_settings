@@ -36,7 +36,7 @@
 'SHIP_RADIUS': 40,
 
 #  SHIP GUN SETTINGS
-'FIRE_RATE': 600,                   # SHOTS PER MINUTE
+'FIRE_RATE': 6000,                   # SHOTS PER MINUTE
 'BULLET_VELOCITY': 800,             # m/s
 'BULLET_MASS': 1,
 'BULLET_RADIUS': 5,

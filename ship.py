@@ -10,7 +10,8 @@ class Ship(GameObject):
         super().__init__(pygame, surface, radius, angle, mass, position, color)
         self.eng_force_norm = 0
 
-        self.cool_down = int((settings.FPS * 60) / settings.FIRE_RATE)
+        self.cool_down = int(
+            (settings.FPS * 60) / settings.FIRE_RATE)  # Сколько итераций до слдующей возможности выстреить
         self.cd_counter = 0
         self.bullet_velocity = settings.BULLET_VELOCITY
         self.bullet_mass = settings.BULLET_MASS
