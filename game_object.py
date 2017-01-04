@@ -10,7 +10,7 @@ class GameObject:
     """
     Класс игрового объекта, реализует физику движения и отрисовку.
     """
-    def __init__(self, pygame, surface, radius, angle, mass, position, color):
+    def __init__(self, pygame, surface, radius, angle, mass, position, color, health = 100):
         self.pygame = pygame
         self.surface = surface
 
@@ -29,7 +29,7 @@ class GameObject:
         self.total_force = np.array((0., 0.))
 
         self.color = color
-        self.health = 100
+        self.health = health
 
     def add_forces(self, *forces):
         self.total_force += sum(forces)  # Добавляем силы, действующие на объект
