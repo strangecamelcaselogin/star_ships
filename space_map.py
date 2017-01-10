@@ -3,6 +3,7 @@ import math
 import cv2 as cv
 from scipy import signal
 import numpy as np
+from settings_storage import settings
 
 
 class SpaceMap:
@@ -25,6 +26,10 @@ class SpaceMap:
         self.binmap = self.load_binmap(scaled_img)  # cv.imread('./map/map2.png')
         # self.image = cv.cvtColor(self.image, cv.COLOR_BGR2image)
         # print(self.image[100], type(self.image[100][200]))
+
+        cv.imshow('image', self.binmap)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
 
         scharr = np.array([[-1 - 1j, 0 - 2j, +1 - 1j],
                            [-2 + 0j, 0 + 0j, +2 + 0j],
@@ -51,22 +56,24 @@ class SpaceMap:
         cv.destroyAllWindows()
 
         # TODO ---
-        self.numbers_tile_in_x = 5  # количество столбцов в матрице тайлов
-        self.numbers_tile_in_y = 5  # количество строк в матрице тайлов
+        height, width = self.binmap.shape[:2]
+        self.numbers_tile_in_x = math.ceil(width / settings.TILE_SIZE)  # количество столбцов в матрице тайлов
+        self.numbers_tile_in_y = math.ceil(height / settings.TILE_SIZE)  # количество строк в матрице тайлов
         self.tile = np.zeros((self.numbers_tile_in_x, self.numbers_tile_in_y), dtype=list)  # координаты левого верхнего
                                                                                         # и правого нижнего углов тайла
 
         self.point_cntr_in_tile = [[] for i in range(
-            (self.numbers_tile_in_x * self.numbers_tile_in_y))]  # список точек контура на каждый тайл
+            (settings.TILE_SIZE * settings.TILE_SIZE))]  # список точек контура на каждый тайл
         self.create_tile()
+        self.draw_line_segment()
 
     def create_tile(self):
         # создаем тайлы
 
         # quantity = self.numbers_tile_in_x * self.numbers_tile_in_y
-        height, width = self.binmap.shape[:2]
-        delta_h = height / self.numbers_tile_in_y  # высота тайла
-        delta_w = width / self.numbers_tile_in_x  # длина тайла
+        # height, width = settings.TILE_SIZE
+        delta_h = settings.TILE_SIZE  # высота тайла
+        delta_w = settings.TILE_SIZE  # длина тайла
 
         tile_x = [0]  # координаты тайлов по иксу
         for i in range(1, self.numbers_tile_in_x + 1, 1):
@@ -81,7 +88,7 @@ class SpaceMap:
             for j in range(self.numbers_tile_in_x):
                 left_top = [tile_x[j], tile_y[i]]
                 right_down = [tile_x[j + 1], tile_y[i + 1]]
-                self.tile[i][j] = [left_top, right_down]
+                self.tile[j][i] = [left_top, right_down]
 
         # идем по всем точкам из контура и распределяем их по тайлам
         for c in self.contours[0]:
@@ -93,15 +100,12 @@ class SpaceMap:
             number = y_tile * self.numbers_tile_in_x + x_tile  # номер самого тайла
             self.point_cntr_in_tile[number].append(c[0])  # добавляем в соотвествующий список точку
 
-            # print(self.point_cntr_in_tile)
-
     def check_number_tile(self, x, y):
         # проверяем, в каком тайле находится объект
         # передаем координаты центра объекта
 
-        height, width = self.binmap.shape[:2]
-        delta_h = height / self.numbers_tile_in_y
-        delta_w = width / self.numbers_tile_in_x
+        delta_h = settings.TILE_SIZE  # высота тайла
+        delta_w = settings.TILE_SIZE  # длина тайла
 
         x_tile = int(x // delta_w)
         y_tile = int(y // delta_h)
@@ -116,19 +120,19 @@ class SpaceMap:
         # рисуем сетку
 
         height, width = self.binmap.shape[:2]
-        delta_h = int(height / self.numbers_tile_in_y)
-        delta_w = int(width / self.numbers_tile_in_x)
+        delta_h = settings.TILE_SIZE
+        delta_w = settings.TILE_SIZE
         for i in range(1, self.numbers_tile_in_x, 1):
             start = (i * delta_w, 0)
             finish = (i * delta_w, height)
-            cv.line(self.binmap, start, finish, (0, 255, 0), 1)
+            cv.line(self.binmap, start, finish, (100), 1)
 
         for i in range(1, self.numbers_tile_in_y, 1):
             start = (0, i * delta_h)
             finish = (width, i * delta_h)
-            cv.line(self.binmap, start, finish, (0, 255, 0), 1)
+            cv.line(self.binmap, start, finish, (100), 1)
 
-        cv.imshow('image', self.binmap)
+        cv.imshow('segment', self.binmap)
         cv.waitKey(0)
         cv.destroyAllWindows()
 
@@ -149,12 +153,11 @@ class SpaceMap:
         for i in range(len(pxarray)):
             for j in range(len(pxarray[i])):
                 if pxarray[i][j] == 0:
-                    num_px[i][j] = 0
-                else:
                     num_px[i][j] = 255
+                else:
+                    num_px[i][j] = 0
 
         # self.debug(num_px, 'num_px.txt')
         # self.debug(pxarray, 'pxarray.txt')
-
 
         return num_px
