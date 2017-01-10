@@ -1,6 +1,6 @@
 from PIL import Image
-import cv2 as cv
 import math
+import cv2 as cv
 from scipy import signal
 import numpy as np
 
@@ -44,17 +44,17 @@ class SpaceMap:
         im2, self.contours, hierarchy = cv.findContours(self.binmap, cv.RETR_TREE,
                                                         cv.CHAIN_APPROX_SIMPLE)  # получаем все контуры на изображении
 
-        # image_with_count = self.image.copy()
-        # cv.drawContours(image_with_count, self.contours, -1, [120])
-        # cv.imshow('image', image_with_count)
-        # cv.waitKey(0)
-        # cv.destroyAllWindows()
+        image_with_count = self.binmap.copy()
+        cv.drawContours(image_with_count, self.contours, -1, [120])
+        cv.imshow('image', image_with_count)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
 
         # TODO ---
         self.numbers_tile_in_x = 5  # количество столбцов в матрице тайлов
         self.numbers_tile_in_y = 5  # количество строк в матрице тайлов
         self.tile = np.zeros((self.numbers_tile_in_x, self.numbers_tile_in_y), dtype=list)  # координаты левого верхнего
-        # и правого нижнего углов тайла
+                                                                                        # и правого нижнего углов тайла
 
         self.point_cntr_in_tile = [[] for i in range(
             (self.numbers_tile_in_x * self.numbers_tile_in_y))]  # список точек контура на каждый тайл
@@ -85,7 +85,7 @@ class SpaceMap:
 
         # идем по всем точкам из контура и распределяем их по тайлам
         for c in self.contours[0]:
-            # for i in range(len(c[0])):
+            # for i in range(len(c[0])): # для будущей обработки нескольких контуров
             # c[0][0] - координата точки контура по иксу
             # с[0][1] - координата точки контура по игреку
             x_tile = int(c[0][0] // delta_w)  # номер столбца в матрице тайлов, в котором находится точка контура
@@ -146,10 +146,15 @@ class SpaceMap:
         # TODO BUGS
         num_px = np.array(pxarray, dtype=np.uint8)
 
-        self.debug(num_px, 'num_px.txt')
-        self.debug(pxarray, 'pxarray.txt')
+        for i in range(len(pxarray)):
+            for j in range(len(pxarray[i])):
+                if pxarray[i][j] == 0:
+                    num_px[i][j] = 0
+                else:
+                    num_px[i][j] = 255
 
-        #np.place(num_px, num_px == 0, [255])  # заменять на пошаговую  обработку
-        #np.place(num_px, ((num_px > 256) or (num_px < 0)), [0])
+        # self.debug(num_px, 'num_px.txt')
+        # self.debug(pxarray, 'pxarray.txt')
+
 
         return num_px
