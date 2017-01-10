@@ -163,13 +163,14 @@ class Environment:
         for b in self.bullets:
             b.update(self.dt)
 
-    def handle_collisions(self, iterations):
+    def handle_collisions(self, iterations=1):
         """
         Detect and resolve collisions
         """
         for count in range(iterations):
             # Object to object
             self.object_collisions(self.ships[0], self.ships[1])
+
             for ast in self.asteroids:
                 self.object_collisions(self.ships[0], ast)
                 self.object_collisions(self.ships[1], ast)
@@ -185,7 +186,7 @@ class Environment:
                         ast.make_damage(b.cnt_damage)
                         b.health = 0
 
-            # ship to bullets
+            # Ship to bullets
             for ship in self.ships:
                 for b in self.bullets:
                     contact = self.object_collisions(ship, b)
@@ -311,11 +312,12 @@ class Environment:
 
     def run(self):
         while not self.stop:
-            timer = time()
+            load_timer = time()
 
             for ship in self.ships:
                 ship.eng_force_norm = 0
                 ship.reset_forces()
+
             for a in self.asteroids:
                 a.reset_forces()
 
@@ -329,11 +331,11 @@ class Environment:
 
             self.apply_forces()  # Add Forces
             self.update()  # Update all objects
-            self.handle_collisions(1)
+            self.handle_collisions()
 
-            timer = time() - timer
+            load_timer = time() - load_timer
             self.render()  # Render all objects
-            self.render_hud(timer)  # Render HUD
+            self.render_hud(load_timer)  # Render HUD
 
             # Update frame
             self.pygame.display.update()
