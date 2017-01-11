@@ -9,7 +9,7 @@ class SpaceMap:
     def __init__(self, pygame, resolution, map_path):
         self.pygame = pygame
 
-        map_path = './map/test3.png'  # TODO !!!
+        # map_path = './map/map_3.png'  # debug only
 
         scaled_img = self.pygame.image.load(map_path)
         scaled_img = self.pygame.transform.scale(scaled_img, resolution)

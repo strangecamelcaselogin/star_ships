@@ -4,7 +4,7 @@ from math import pi
 
 import numpy as np
 
-from v2math import v2norm, v2sqr_norm, v2norm
+from v2math import v2norm, v2sqr_norm, v2norm, v2unit
 from settings_storage import settings
 from ship import Ship
 from asteroid import Asteroid
@@ -196,13 +196,76 @@ class Environment:
                         ship.make_damage(b.cnt_damage)
                         b.health = 0
 
-            # Object to border
-            self.screen_border_collisions(self.ships[0])
-            self.screen_border_collisions(self.ships[1])
+            # Object to map
             for ast in self.asteroids:
-                self.screen_border_collisions(ast)
+                self.map_collision(ast)
 
             self.map_collision(self.ships[0])
+            self.map_collision(self.ships[1])
+
+    @staticmethod
+    def object_collisions(a, b):
+        direction = a.position - b.position
+        distance = v2norm(direction)
+        radius_sum = a.radius + b.radius
+        if distance <= radius_sum:
+            if distance != 0:
+                factor = (distance - radius_sum) / distance
+            else:
+                factor = -10
+
+            k = a.mass / (a.mass + b.mass)
+            # v2unit(direction)
+            a.position -= (1 - k) * factor * direction
+            b.position += k * factor * direction
+
+            return True
+
+        return False
+
+    @staticmethod
+    def screen_border_collisions(a):
+        if a.x - a.radius < 0:
+            a.position[0] = a.radius
+
+        elif a.x + a.radius > settings.DISPLAY_RES[0]:
+            a.position[0] = settings.DISPLAY_RES[0] - a.radius
+
+        if a.y - a.radius < 0:
+            a.position[1] = a.radius
+
+        elif a.y + a.radius > settings.DISPLAY_RES[1]:
+            a.position[1] = settings.DISPLAY_RES[1] - a.radius
+
+    def map_collision(self, a):
+        number = a.get_tile(self.map)
+
+        if number is not None:
+
+            point_contour = self.map.point_cntr_in_tile[number]
+
+            collide = False
+            min_delta = a.radius
+            min_point = None
+
+            for point in point_contour[1:]:
+                direction = a.position - point
+                distance = v2norm(direction)  # TODO sqr_norm
+                if distance < min_delta:
+                    if not collide:
+                        collide = True
+
+                    min_delta = distance
+                    min_point = point
+
+            if collide:
+                x, y = min_point[0], min_point[1]
+                grad_x = self.map.grad[y][x].real
+                grad_y = self.map.grad[y][x].imag
+                normal = v2unit(np.array([grad_x, grad_y]))
+
+                factor = (min_delta - a.radius) / min_delta
+                a.position += normal * factor
 
     def render(self):
         # self.surface.fill(settings.white)
@@ -215,8 +278,7 @@ class Environment:
 
         if self.debug:
             [a.render_debug() for a in self.asteroids]
-            self.ships[0].render_debug()
-            self.ships[1].render_debug()
+            [s.render_debug() for s in self.ships]
             self.render_net()
 
     def render_hud(self, cycle_time):
@@ -259,69 +321,12 @@ class Environment:
             self.pygame.draw.line(self.surface, settings.gray, start, finish)
 
     @staticmethod
-    def object_collisions(a, b):
-        direction = a.position - b.position
-        distance = v2norm(direction)
-        radius_sum = a.radius + b.radius
-        if distance <= radius_sum:
-            if distance != 0:
-                factor = (distance - radius_sum) / distance
-            else:
-                factor = -10
-
-            k = a.mass / (a.mass + b.mass)
-            a.position -= (1 - k) * factor * direction
-            b.position += k * factor * direction
-
-            return True
-
-        return False
-
-    @staticmethod
-    def screen_border_collisions(a):
-        if a.x - a.radius < 0:
-            a.position[0] = a.radius
-
-        elif a.x + a.radius > settings.DISPLAY_RES[0]:
-            a.position[0] = settings.DISPLAY_RES[0] - a.radius
-
-        if a.y - a.radius < 0:
-            a.position[1] = a.radius
-
-        elif a.y + a.radius > settings.DISPLAY_RES[1]:
-            a.position[1] = settings.DISPLAY_RES[1] - a.radius
-
-    def map_collision(self, a):
-        number = a.get_tile(self.map)
-        point_contour = self.map.point_cntr_in_tile[number]
-
-        collide = False
-        min_delta = a.radius
-        min_point = None
-
-        for index, point in enumerate(point_contour):
-            delta = a.position - point
-            delta_len = v2norm(delta)  # TODO sqr_norm
-            if delta_len < min_delta:
-                if not collide:
-                    collide = True
-
-                min_delta = delta_len
-                min_point = point
-
-        if collide:
-            gradient = self.map.grad[min_point[1]][min_point[0]]
-            grad_x = gradient.real
-            grad_y = gradient.imag
-            # print('contact, {} {} {}'.format(number, grad_x, grad_y))
-
+    def screen_border_filter(e):
+        x, y = e.position
+        return x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]
 
     @staticmethod
     def check_kill(check_list):
-        #def screen_border_filter(e):
-        #    x, y = e.position
-        #    return x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]
-
         for elem in check_list[:]:
             if elem.health == 0:  # screen_border_filter(elem):
                 check_list.remove(elem)
@@ -359,7 +364,6 @@ class Environment:
             load_timer = time()
 
             for ship in self.ships:
-                ship.eng_force_norm = 0
                 ship.reset_forces()
 
             for a in self.asteroids:
@@ -375,9 +379,10 @@ class Environment:
 
             self.apply_forces()  # Add Forces
             self.update()  # Update all objects
-            self.handle_collisions()
+            self.handle_collisions(iterations=1)
 
             load_timer = time() - load_timer
+
             self.render()  # Render all objects
             self.render_hud(load_timer)  # Render HUD
 

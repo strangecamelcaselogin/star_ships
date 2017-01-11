@@ -58,6 +58,7 @@ class GameObject:
         """
         Important to reset self.total_force
         """
+        self.eng_force_norm = 0
         self.total_force = np.array((0., 0.))
 
     def render(self, width=1):
@@ -87,6 +88,9 @@ class GameObject:
         y_tile = int(y // settings.TILE_SIZE)
 
         number = y_tile * space_map.numbers_tile_in_x + x_tile
-
         # self.map.point_cntr_in_tile[number]  # список точек контура в тайле, в котором находится объект
-        return number
+
+        if 0 <= number <= (space_map.numbers_tile_in_x * space_map.numbers_tile_in_y - 1):
+            return number
+
+        return None
