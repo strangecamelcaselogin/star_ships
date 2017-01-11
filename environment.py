@@ -4,7 +4,7 @@ from math import pi
 
 import numpy as np
 
-from v2math import v2norm
+from v2math import v2norm, v2sqr_norm, v2norm
 from settings_storage import settings
 from ship import Ship
 from asteroid import Asteroid
@@ -63,6 +63,8 @@ class Environment:
                             settings.blue, settings.SHIP_HEALTH, settings.SHIP_1_IMG)]
 
         # Asteroids
+        self.asteroids = []
+
         for i in range(settings.ASTEROIDS_CNT):
             initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
@@ -195,10 +197,12 @@ class Environment:
                         b.health = 0
 
             # Object to border
-            self.border_collisions(self.ships[0])
-            self.border_collisions(self.ships[1])
+            self.screen_border_collisions(self.ships[0])
+            self.screen_border_collisions(self.ships[1])
             for ast in self.asteroids:
-                self.border_collisions(ast)
+                self.screen_border_collisions(ast)
+
+            self.map_collision(self.ships[0])
 
     def render(self):
         # self.surface.fill(settings.white)
@@ -213,6 +217,7 @@ class Environment:
             [a.render_debug() for a in self.asteroids]
             self.ships[0].render_debug()
             self.ships[1].render_debug()
+            self.render_net()
 
     def render_hud(self, cycle_time):
         cycle_percent = cycle_time / self.dt * 100
@@ -239,6 +244,20 @@ class Environment:
                                   1, settings.white)
         self.surface.blit(data_1, (settings.DISPLAY_RES[0] - 250, settings.DISPLAY_RES[1] - 20))
 
+    def render_net(self):
+        width, height = settings.DISPLAY_RES  # self.binmap.shape[:2]
+        delta = settings.TILE_SIZE
+
+        for i in range(1, self.map.numbers_tile_in_x):
+            start = (i * delta, 0)
+            finish = (i * delta, height)
+            self.pygame.draw.line(self.surface, settings.gray, start, finish)
+
+        for i in range(1, self.map.numbers_tile_in_y):
+            start = (0, i * delta)
+            finish = (width, i * delta)
+            self.pygame.draw.line(self.surface, settings.gray, start, finish)
+
     @staticmethod
     def object_collisions(a, b):
         direction = a.position - b.position
@@ -248,7 +267,8 @@ class Environment:
             if distance != 0:
                 factor = (distance - radius_sum) / distance
             else:
-                factor = (distance - radius_sum)
+                factor = -10
+
             k = a.mass / (a.mass + b.mass)
             a.position -= (1 - k) * factor * direction
             b.position += k * factor * direction
@@ -258,7 +278,7 @@ class Environment:
         return False
 
     @staticmethod
-    def border_collisions(a):
+    def screen_border_collisions(a):
         if a.x - a.radius < 0:
             a.position[0] = a.radius
 
@@ -270,6 +290,31 @@ class Environment:
 
         elif a.y + a.radius > settings.DISPLAY_RES[1]:
             a.position[1] = settings.DISPLAY_RES[1] - a.radius
+
+    def map_collision(self, a):
+        number = a.get_tile(self.map)
+        point_contour = self.map.point_cntr_in_tile[number]
+
+        collide = False
+        min_delta = a.radius
+        min_point = None
+
+        for index, point in enumerate(point_contour):
+            delta = a.position - point
+            delta_len = v2norm(delta)  # TODO sqr_norm
+            if delta_len < min_delta:
+                if not collide:
+                    collide = True
+
+                min_delta = delta_len
+                min_point = point
+
+        if collide:
+            gradient = self.map.grad[min_point[1]][min_point[0]]
+            grad_x = gradient.real
+            grad_y = gradient.imag
+            # print('contact, {} {} {}'.format(number, grad_x, grad_y))
+
 
     @staticmethod
     def check_kill(check_list):
