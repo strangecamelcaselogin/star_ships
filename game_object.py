@@ -79,5 +79,14 @@ class GameObject:
         else:
             self.health = 0
 
-    def get_tile(self):
-        pass
+    def get_tile(self, space_map):
+        # проверяем, в каком тайле находится объект
+
+        x, y = self.position
+        x_tile = int(x // settings.TILE_SIZE)
+        y_tile = int(y // settings.TILE_SIZE)
+
+        number = y_tile * space_map.numbers_tile_in_x + x_tile
+
+        # self.point_cntr_in_tile[number]  # возвращаем список точек контура в тайле, в котором находится объект
+        return number
