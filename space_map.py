@@ -17,20 +17,9 @@ class SpaceMap:
 
         self.map_image = scaled_img.copy()
 
-        # scaled_img = scaled_img.convert()  # Убрать альфа канал
-
-        # self.binmap = self.load_binmap(scaled_img)
+        self.binmap = self.load_binmap(scaled_img)
 
         # create gradient and tile
-
-        self.binmap = self.load_binmap(scaled_img)  # cv.imread('./map/map2.png')
-        # self.image = cv.cvtColor(self.image, cv.COLOR_BGR2image)
-        # print(self.image[100], type(self.image[100][200]))
-
-        cv.imshow('image', self.binmap)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
-
         scharr = np.array([[-1 - 1j, 0 - 2j, +1 - 1j],
                            [-2 + 0j, 0 + 0j, +2 + 0j],
                            [-1 + 1j, 0 + 2j, +1 + 1j]])  # ядро свертки
@@ -42,12 +31,12 @@ class SpaceMap:
         # для мнимой части обращаться по imag
 
         self.gradient = np.absolute(self.grad)
-        cv.imshow('image', self.gradient)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
+        # cv.imshow('image', self.gradient)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
 
         im2, self.contours, hierarchy = cv.findContours(self.binmap, cv.RETR_TREE,
-                                                        cv.CHAIN_APPROX_SIMPLE)  # получаем все контуры на изображении
+                                                        cv.CHAIN_APPROX_NONE)  # получаем все контуры на изображении
 
         image_with_count = self.binmap.copy()
         cv.drawContours(image_with_count, self.contours, -1, [120])
@@ -55,33 +44,28 @@ class SpaceMap:
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-        # TODO ---
         height, width = self.binmap.shape[:2]
         self.numbers_tile_in_x = math.ceil(width / settings.TILE_SIZE)  # количество столбцов в матрице тайлов
         self.numbers_tile_in_y = math.ceil(height / settings.TILE_SIZE)  # количество строк в матрице тайлов
+
         self.tile = np.zeros((self.numbers_tile_in_x, self.numbers_tile_in_y), dtype=list)  # координаты левого верхнего
-                                                                                        # и правого нижнего углов тайла
+        # и правого нижнего углов тайла
+
+        print(len(self.contours[0]))
 
         self.point_cntr_in_tile = [[] for i in range(
-            (settings.TILE_SIZE * settings.TILE_SIZE))]  # список точек контура на каждый тайл
+            (self.numbers_tile_in_x * self.numbers_tile_in_y))]  # список точек контура на каждый тайл
+
         self.create_tile()
-        self.draw_line_segment()
+        # self.draw_line_segment()
 
     def create_tile(self):
         # создаем тайлы
 
-        # quantity = self.numbers_tile_in_x * self.numbers_tile_in_y
-        # height, width = settings.TILE_SIZE
-        delta_h = settings.TILE_SIZE  # высота тайла
-        delta_w = settings.TILE_SIZE  # длина тайла
+        delta = settings.TILE_SIZE  # высота тайла
 
-        tile_x = [0]  # координаты тайлов по иксу
-        for i in range(1, self.numbers_tile_in_x + 1, 1):
-            tile_x.append(tile_x[i - 1] + delta_w)
-
-        tile_y = [0]  # координаты тайлов по игреку
-        for i in range(1, self.numbers_tile_in_y + 1, 1):
-            tile_y.append(tile_y[i - 1] + delta_h)
+        tile_x = [delta * i for i in range(self.numbers_tile_in_x + 1)]
+        tile_y = [delta * i for i in range(self.numbers_tile_in_y + 1)]
 
         # заполняем матрицу координат углов тайлов (будет нужна для отрисовки)
         for i in range(self.numbers_tile_in_y):
@@ -95,41 +79,27 @@ class SpaceMap:
             # for i in range(len(c[0])): # для будущей обработки нескольких контуров
             # c[0][0] - координата точки контура по иксу
             # с[0][1] - координата точки контура по игреку
-            x_tile = int(c[0][0] // delta_w)  # номер столбца в матрице тайлов, в котором находится точка контура
-            y_tile = int(c[0][1] // delta_h)  # номер строки в матрице тайлов, в котором находится точка контура
+
+            x_tile = int(c[0][0] // delta)  # номер столбца в матрице тайлов, в котором находится точка контура
+            y_tile = int(c[0][1] // delta)  # номер строки в матрице тайлов, в котором находится точка контура
+
             number = y_tile * self.numbers_tile_in_x + x_tile  # номер самого тайла
             self.point_cntr_in_tile[number].append(c[0])  # добавляем в соотвествующий список точку
-
-    def check_number_tile(self, x, y):
-        # проверяем, в каком тайле находится объект
-        # передаем координаты центра объекта
-
-        delta_h = settings.TILE_SIZE  # высота тайла
-        delta_w = settings.TILE_SIZE  # длина тайла
-
-        x_tile = int(x // delta_w)
-        y_tile = int(y // delta_h)
-
-        number = y_tile * self.numbers_tile_in_x + x_tile
-        # print(number)
-        point_contour = self.point_cntr_in_tile[number]
-
-        return point_contour  # возвращаем список точек контура в тайле, в котором находится объект
 
     def draw_line_segment(self):
         # рисуем сетку
 
         height, width = self.binmap.shape[:2]
-        delta_h = settings.TILE_SIZE
-        delta_w = settings.TILE_SIZE
+        delta = settings.TILE_SIZE
+
         for i in range(1, self.numbers_tile_in_x, 1):
-            start = (i * delta_w, 0)
-            finish = (i * delta_w, height)
+            start = (i * delta, 0)
+            finish = (i * delta, height)
             cv.line(self.binmap, start, finish, (100), 1)
 
         for i in range(1, self.numbers_tile_in_y, 1):
-            start = (0, i * delta_h)
-            finish = (width, i * delta_h)
+            start = (0, i * delta)
+            finish = (width, i * delta)
             cv.line(self.binmap, start, finish, (100), 1)
 
         cv.imshow('segment', self.binmap)
@@ -147,7 +117,6 @@ class SpaceMap:
     def load_binmap(self, img):
         pxarray = self.pygame.PixelArray(img).transpose()  # Поворот на 90 градусов
 
-        # TODO BUGS
         num_px = np.array(pxarray, dtype=np.uint8)
 
         for i in range(len(pxarray)):
