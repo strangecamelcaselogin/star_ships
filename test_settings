@@ -30,7 +30,7 @@
 'ASTEROID_RADIUS': 10,
 'ASTEROIDS_CNT': 15,
 'ASTEROID_MASS': 10 * 10 ** 3,
-'ASTEROID_HEALTH': 2,
+'ASTEROID_HEALTH': 15,
 
 #  SHIP SETTINGS
 'SHIP_MASS': 5 * 10**3,
@@ -40,10 +40,10 @@
 'SHIP_HEALTH': 100,
 
 #  SHIP GUN SETTINGS
-'FIRE_RATE': 600,                   # SHOTS PER MINUTE
-'BULLET_DAMAGE': 1,
+'FIRE_RATE': 2000,                  # Shots per minute, 60 * FPS = MAX
+'BULLET_DAMAGE': 5,
 'BULLET_VELOCITY': 800,             # m/s
 'BULLET_MASS': 1,
-'BULLET_RADIUS': 5,
+'BULLET_RADIUS': 2,
 'BULLET_TTL': 1.5                   # TTL in seconds
 }

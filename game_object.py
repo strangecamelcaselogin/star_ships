@@ -88,5 +88,5 @@ class GameObject:
 
         number = y_tile * space_map.numbers_tile_in_x + x_tile
 
-        # self.point_cntr_in_tile[number]  # возвращаем список точек контура в тайле, в котором находится объект
+        # self.map.point_cntr_in_tile[number]  # список точек контура в тайле, в котором находится объект
         return number

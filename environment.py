@@ -92,7 +92,7 @@ class Environment:
                     self.stop = True
 
                 if event.key == self.pygame.K_p:
-                    self.pause("PAUSED")
+                    self.pause("PAUSED | ESCAPE - EXIT")
 
                 if event.key == self.pygame.K_b:
                     self.debug = not self.debug
@@ -350,8 +350,7 @@ class Environment:
                         self.pygame.quit()
                         quit()
 
-                    if event.key == self.pygame.K_p:
-                        stop = True
+                    stop = True
 
             self.clock.tick(settings.FPS)
 
@@ -386,11 +385,9 @@ class Environment:
             self.pygame.display.update()
             self.clock.tick(settings.FPS)
 
-            if self.ships[0].health == 0 or self.ships[1].health == 0:
-                self.stop = True
-
-        for i, ship in enumerate(self.ships):
-            if ship.health == 0:
-                print('PLAYER {} WIN!!!'.format(1 - i))
+            for i, ship in enumerate(self.ships):
+                if ship.health == 0:
+                    self.pause('PLAYER {} WIN'.format(i + 1))
+                    self.stop = True
 
         self.pygame.quit()

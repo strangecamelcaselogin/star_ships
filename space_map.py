@@ -1,4 +1,3 @@
-# from PIL import Image
 import math
 import cv2 as cv
 from scipy import signal
@@ -38,7 +37,6 @@ class SpaceMap:
                                                         cv.CHAIN_APPROX_NONE)  # получаем все контуры на изображении
 
         #image_with_count = self.binmap.copy()
-
         #cv.drawContours(image_with_count, self.contours, -1, [120])
         #cv.imshow('image', image_with_count)
         #cv.waitKey(0)
