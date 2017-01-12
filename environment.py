@@ -13,7 +13,7 @@ from space_map import SpaceMap
 
 
 class Environment:
-    def __init__(self, pygame, settings_filename, debug=True, stop_gravity=False):
+    def __init__(self, pygame, settings_filename, debug=False, stop_gravity=False):
         settings.load(settings_filename)
 
         self.debug = debug
@@ -38,7 +38,7 @@ class Environment:
         background_img = self.pygame.image.load(settings.BACKGROUND)
         background_img = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
 
-        self.map = SpaceMap(self.pygame, settings.DISPLAY_RES, settings.MAP_IMG)
+        self.map = SpaceMap(self.pygame, settings.DISPLAY_RES, settings.MAP_IMG, debug=False)
 
         background_img.blit(self.map.map_image, (0, 0))  # Накладываем карту на картинку
 
@@ -56,11 +56,13 @@ class Environment:
         width, height = settings.DISPLAY_RES
         ship_0_position = (random() * width, random() * height)
         ship_1_position = (random() * width, random() * height)
-        self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_0_position,
-                         settings.blue, settings.SHIP_HEALTH, settings.SHIP_0_IMG)]
+        self.ships += [
+            Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_0_position,
+                 settings.blue, settings.SHIP_HEALTH, settings.SHIP_0_IMG)]
 
-        self.ships += [Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_1_position,
-                            settings.blue, settings.SHIP_HEALTH, settings.SHIP_1_IMG)]
+        self.ships += [
+            Ship(self.pygame, self.surface, settings.SHIP_RADIUS, 0 * pi, settings.SHIP_MASS, ship_1_position,
+                 settings.blue, settings.SHIP_HEALTH, settings.SHIP_1_IMG)]
 
         # Asteroids
         self.asteroids = []
@@ -69,13 +71,15 @@ class Environment:
             initial_position = (random() * width, random() * height)
             initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
             self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
-                                           initial_position, initial_velocity, settings.white, settings.ASTEROID_HEALTH))
+                                           initial_position, initial_velocity, settings.white,
+                                           settings.ASTEROID_HEALTH))
 
         # Gravity sources
         inf_threshold = 10 ** 7  # max gravity force
         mass = 5.97 * 10 ** 16
         self.gravity_sources = [
-            GravitySource(self.pygame, self.surface, 25, mass, (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
+            GravitySource(self.pygame, self.surface, 25, mass,
+                          (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
                           settings.black, settings.G, inf_threshold),
             GravitySource(self.pygame, self.surface, 25, mass,
                           (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
@@ -184,7 +188,6 @@ class Environment:
                 for b in self.bullets:
                     contact = self.object_collisions(ast, b)
                     if contact:
-                        ast.color = settings.red
                         ast.make_damage(b.cnt_damage)
                         b.health = 0
 
@@ -282,29 +285,19 @@ class Environment:
             self.render_net()
 
     def render_hud(self, cycle_time):
+        hud_color = settings[settings.HUD_COLOR]
+
         cycle_percent = cycle_time / self.dt * 100
         fps_label = self.text.render('FPS:{}, cycle_time:{}%'.format(round(self.clock.get_fps()), round(cycle_percent)),
                                      1, settings.white)
-        self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
 
-        data_0 = self.text.render('ship_0: |F_total|:{}, |F_engine|:{}, p:{}, |v|:{}, |a|:{}, ang:{}, b:{}, health:{};'
-                                .format(np.round(v2norm(self.ships[0].total_force), decimals=1),
-                                        self.ships[0].eng_force_norm,
-                                        np.around(self.ships[0].position, decimals=1),
-                                        np.round(v2norm(self.ships[0].inst_velocity / self.dt), decimals=1),
-                                        np.round(v2norm(self.ships[0].acceleration), decimals=1),
-                                        np.round(self.ships[0].angle / pi, decimals=1),
-                                        len(self.bullets),
-                                        self.ships[0].health
-                                        ),
-                                1, settings.white)
+        data_0 = self.text.render('ship_1: health:{}'.format(self.ships[0].health), 1, hud_color)
+
+        data_1 = self.text.render('ship_2: health:{}'.format(self.ships[1].health), 1, hud_color)
 
         self.surface.blit(data_0, (10, 10))
-
-        data_1 = self.text.render('ship_1: health:{}'
-                                  .format(self.ships[1].health),
-                                  1, settings.white)
-        self.surface.blit(data_1, (settings.DISPLAY_RES[0] - 250, settings.DISPLAY_RES[1] - 20))
+        self.surface.blit(data_1, (10, 30))
+        self.surface.blit(fps_label, (10, settings.DISPLAY_RES[1] - 20))
 
     def render_net(self):
         width, height = settings.DISPLAY_RES  # self.binmap.shape[:2]
@@ -321,14 +314,19 @@ class Environment:
             self.pygame.draw.line(self.surface, settings.gray, start, finish)
 
     @staticmethod
-    def screen_border_filter(e):
-        x, y = e.position
+    def screen_border_filter(game_object):
+        x, y = game_object.position
         return x < 0 or y < 0 or x > settings.DISPLAY_RES[0] or y > settings.DISPLAY_RES[1]
+
+    @staticmethod
+    def health_filter(game_object):
+        if game_object.health == 0:
+            return True
 
     @staticmethod
     def check_kill(check_list):
         for elem in check_list[:]:
-            if elem.health == 0:  # screen_border_filter(elem):
+            if Environment.health_filter(elem):  # elem.health == 0:  # screen_border_filter(elem):
                 check_list.remove(elem)
 
     def play_sound(self, filename):

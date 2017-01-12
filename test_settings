@@ -20,11 +20,12 @@
 'BACKGROUND': './pic/space_1.png',
 'SHIP_0_IMG': './pic/millennium_falcon.png',
 'SHIP_1_IMG': './pic/interstellar_ship.png',
+'HUD_COLOR': 'green',
 
 #  ENVIRONMENT SETTINGS
 'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
 'G': 6.67 * 10 ** (-11),            # GRAVITY CONST
-'TILE_SIZE': 200,                   # Tile edge length
+'TILE_SIZE': 100,                   # Tile edge length
 
 #  ASTEROIDS SETTINGS
 'ASTEROID_RADIUS': 10,
