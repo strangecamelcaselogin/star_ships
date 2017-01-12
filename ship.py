@@ -7,12 +7,13 @@ from bullet import Bullet
 
 class Ship(GameObject):
     def __init__(self, pygame, surface, radius, angle, mass, position, color, health, img_path):
-        super().__init__(pygame, surface, radius, angle, mass, position, color, health)
+        super().__init__(pygame, surface, radius, angle, mass, position, color)
         self.eng_force_norm = 0
 
         self.cool_down = int(
             (settings.FPS * 60) / settings.FIRE_RATE)  # Сколько итераций до слдующей возможности выстреить
         self.cd_counter = 0
+
         self.bullet_velocity = settings.BULLET_VELOCITY
         self.bullet_mass = settings.BULLET_MASS
         self.bullet_radius = settings.BULLET_RADIUS
@@ -52,11 +53,11 @@ class Ship(GameObject):
             # recoil by shot
             # self.bullet_velocity is speed in m/s
             f = self.bullet_velocity / dt * self.bullet_mass
-            f = -1 * self.direction * f
+            f = - self.direction * f
             self.add_forces(f)
 
-            inst_velocity = self.direction * self.bullet_velocity / settings.FPS + self.inst_velocity
-            # for avoid collisions with ship
+            inst_velocity = self.direction * self.bullet_velocity * dt + self.inst_velocity
+            # to avoid collisions with ship
             inst_position = self.position + self.direction * (self.radius + self.bullet_radius)
             return Bullet(self.pygame, self.surface, self.bullet_radius, self.bullet_mass, inst_position,
                           inst_velocity, settings.yellow, self.bullet_ttl, self.bullet_damage)
