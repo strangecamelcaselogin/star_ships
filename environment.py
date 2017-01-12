@@ -64,26 +64,25 @@ class Environment:
                  settings.blue, settings.SHIP_HEALTH, settings.SHIP_1_IMG)]
 
         # Asteroids
-        self.asteroids = []
 
-        #for i in range(settings.ASTEROIDS_CNT):
-        #    initial_position = (random() * width, random() * height)
-        #    initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
-        #    self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
-        #                                   initial_position, initial_velocity, settings.white,
-        #                                   settings.ASTEROID_HEALTH))
+        for i in range(settings.ASTEROIDS_CNT):
+            initial_position = (random() * width, random() * height)
+            initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
+            self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
+                                           initial_position, initial_velocity, settings.white,
+                                           settings.ASTEROID_HEALTH))
 
         # Gravity sources
         # TODO: to script
         inf_threshold = 10 ** 7  # max gravity force
         mass = 5.97 * 10 ** 16
-        self.gravity_sources = []
-        #    GravitySource(self.pygame, self.surface, 25, mass,
-        #                  (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
-        #                  settings.black, settings.G, inf_threshold),
-        #    GravitySource(self.pygame, self.surface, 25, mass,
-        #                  (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
-        #                  inf_threshold)]
+        self.gravity_sources = [
+            GravitySource(self.pygame, self.surface, 25, mass,
+                          (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
+                          settings.black, settings.G, inf_threshold),
+            GravitySource(self.pygame, self.surface, 25, mass,
+                          (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
+                          inf_threshold)]
 
     def handle_events(self):
         # Check pygame events
