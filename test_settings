@@ -21,17 +21,19 @@
 'SHIP_0_IMG': './pic/millennium_falcon.png',
 'SHIP_1_IMG': './pic/interstellar_ship.png',
 'HUD_COLOR': 'green',
+'MAP_DEBUG': False,
 
 #  ENVIRONMENT SETTINGS
 'SCALE': 1,                         # 1 == 1px per meter, 0.001 == 1px per 1000 meter
 'G': 6.67 * 10 ** (-11),            # GRAVITY CONST
 'TILE_SIZE': 100,                   # Tile edge length
+'DEF_HEALTH': 100,
 
 #  ASTEROIDS SETTINGS
 'ASTEROID_RADIUS': 10,
 'ASTEROIDS_CNT': 15,
 'ASTEROID_MASS': 10 * 10 ** 3,
-'ASTEROID_HEALTH': 15,
+'ASTEROID_HEALTH': 6,
 
 #  SHIP SETTINGS
 'SHIP_MASS': 5 * 10**3,
@@ -42,9 +44,9 @@
 
 #  SHIP GUN SETTINGS
 'FIRE_RATE': 2000,                  # Shots per minute, 60 * FPS = MAX
-'BULLET_DAMAGE': 5,
+'BULLET_DAMAGE': 2,
 'BULLET_VELOCITY': 800,             # m/s
-'BULLET_MASS': 1,
+'BULLET_MASS': 10,
 'BULLET_RADIUS': 2,
 'BULLET_TTL': 1.5                   # TTL in seconds
 }

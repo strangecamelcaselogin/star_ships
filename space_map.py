@@ -22,7 +22,7 @@ class SpaceMap:
                            [-2 + 0j, 0 + 0j, +2 + 0j],
                            [-1 + 1j, 0 + 2j, +1 + 1j]])  # ядро свертки
 
-        self.grad = signal.convolve2d(self.binmap, scharr, boundary='symm',
+        self.grad = signal.convolve2d(self.binmap.copy(), scharr, boundary='symm',
                                       mode='same')  # градиенты по иксу(реальная) и игреку(мнимое)
         # в grad комплексные числа
         # для реальной части обращаться по real
@@ -32,7 +32,7 @@ class SpaceMap:
         im2, self.__contours, hierarchy = cv.findContours(self.binmap.copy(), cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
         if debug:
-            cv.imshow('bin map image', self.binmap)
+            cv.imshow('image', self.binmap)
             cv.waitKey(0)
 
             gradient = np.absolute(self.grad)
@@ -81,12 +81,12 @@ class SpaceMap:
 
     def load_binmap(self, img):
         pxarray = self.pygame.PixelArray(img).transpose()  # Поворот на 90 градусов
-
+        self.__debug(pxarray, 'pxarr.txt')
         num_px = np.array(pxarray, dtype=np.uint8)
 
         for i in range(len(pxarray)):
             for j in range(len(pxarray[i])):
-                if pxarray[i][j] == 0:
+                if pxarray[i][j] == -1:
                     num_px[i][j] = 255
                 else:
                     num_px[i][j] = 0

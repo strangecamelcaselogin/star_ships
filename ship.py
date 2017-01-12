@@ -7,7 +7,7 @@ from bullet import Bullet
 
 class Ship(GameObject):
     def __init__(self, pygame, surface, radius, angle, mass, position, color, health, img_path):
-        super().__init__(pygame, surface, radius, angle, mass, position, color, health)
+        super().__init__(pygame, surface, radius, angle, mass, position, color)
         self.eng_force_norm = 0
 
         self.cool_down = int(

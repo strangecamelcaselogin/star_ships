@@ -13,13 +13,13 @@ from space_map import SpaceMap
 
 
 class Environment:
-    def __init__(self, pygame, settings_filename, debug=False, stop_gravity=False):
+    def __init__(self, pygame, settings_filename, debug=False):
         settings.load(settings_filename)
 
         self.debug = debug
-        self.stop_gravity = stop_gravity
-
+        self.stop_gravity = False
         self.stop = False
+
         self.dt = 1 / settings.FPS
 
         self.pygame = pygame
@@ -35,11 +35,10 @@ class Environment:
         else:
             self.surface = self.pygame.display.set_mode(settings.DISPLAY_RES)
 
+        self.map = SpaceMap(self.pygame, settings.DISPLAY_RES, settings.MAP_IMG, debug=settings.MAP_DEBUG)
+
         background_img = self.pygame.image.load(settings.BACKGROUND)
         background_img = self.pygame.transform.scale(background_img, settings.DISPLAY_RES)
-
-        self.map = SpaceMap(self.pygame, settings.DISPLAY_RES, settings.MAP_IMG, debug=False)
-
         background_img.blit(self.map.map_image, (0, 0))  # Накладываем карту на картинку
 
         # convert() приводит pixelformat к такому же как и у surface, добавляет производительности
@@ -67,23 +66,24 @@ class Environment:
         # Asteroids
         self.asteroids = []
 
-        for i in range(settings.ASTEROIDS_CNT):
-            initial_position = (random() * width, random() * height)
-            initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
-            self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
-                                           initial_position, initial_velocity, settings.white,
-                                           settings.ASTEROID_HEALTH))
+        #for i in range(settings.ASTEROIDS_CNT):
+        #    initial_position = (random() * width, random() * height)
+        #    initial_velocity = np.array((0., 0.))  # np.array((random() * 3, random() * 3))
+        #    self.asteroids.append(Asteroid(self.pygame, self.surface, settings.ASTEROID_RADIUS, settings.ASTEROID_MASS,
+        #                                   initial_position, initial_velocity, settings.white,
+        #                                   settings.ASTEROID_HEALTH))
 
         # Gravity sources
+        # TODO: to script
         inf_threshold = 10 ** 7  # max gravity force
         mass = 5.97 * 10 ** 16
-        self.gravity_sources = [
-            GravitySource(self.pygame, self.surface, 25, mass,
-                          (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
-                          settings.black, settings.G, inf_threshold),
-            GravitySource(self.pygame, self.surface, 25, mass,
-                          (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
-                          inf_threshold)]
+        self.gravity_sources = []
+        #    GravitySource(self.pygame, self.surface, 25, mass,
+        #                  (width / 3 / settings.SCALE, height / 2 / settings.SCALE),
+        #                  settings.black, settings.G, inf_threshold),
+        #    GravitySource(self.pygame, self.surface, 25, mass,
+        #                  (2 * width / 3 / settings.SCALE, height / 2 / settings.SCALE), settings.black, settings.G,
+        #                  inf_threshold)]
 
     def handle_events(self):
         # Check pygame events
